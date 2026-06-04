@@ -10,63 +10,38 @@ Dashboard profissional para Meta Ads hospedado no Cloudflare Pages. Sem código,
 - Funil de conversão, audiências e diagnósticos da conta
 - URL própria no Cloudflare Pages (grátis)
 
-## Como usar este template
-
-A forma mais fácil é abrir este repositório no **Claude Code** e deixar o assistente te guiar por cada etapa.
-Ao abrir o projeto, o Claude vai detectar que o setup ainda não foi feito e vai iniciar o processo automaticamente.
-
-**Para abrir no Claude Code:**
-1. Baixe o Claude Code em [claude.ai/code](https://claude.ai/code) (disponível para Mac e Windows)
-2. Instale e faça login com sua conta Anthropic
-3. Clone o repositório no seu computador (`git clone URL_DO_SEU_REPO`)
-4. No Claude Code, abra a pasta do projeto clonado
-5. O Claude vai se apresentar e iniciar o setup automaticamente
-
-Se preferir fazer manual, siga o passo a passo abaixo.
-
----
-
 ## Passo a passo completo
 
 ### Pré-requisitos
 
-- Conta no GitHub → [github.com](https://github.com)
-- Conta na Cloudflare → [cloudflare.com](https://cloudflare.com)
+- Conta no GitHub (criada no vídeo)
+- Repositório já copiado a partir deste template (feito no vídeo)
 - Acesso ao Facebook Business Manager com permissão na conta de anúncios
 
 **Tempo estimado: 30 a 45 minutos**
 
 ---
 
-### Etapa 1 — Copiar o repositório
-
-1. No GitHub, clique no botão verde **"Use this template"** → **"Create a new repository"**
-2. Dê um nome ao repositório (ex: `cliente-dashboard`)
-3. Selecione **Private** (recomendado)
-4. Clique em **"Create repository"**
-
----
-
-### Etapa 2 — Criar conta na Cloudflare
+### Etapa 1 — Criar conta na Cloudflare
 
 1. Acesse [cloudflare.com](https://cloudflare.com) e crie uma conta gratuita
 2. Confirme o e-mail
 
 ---
 
-### Etapa 3 — Criar o projeto no Cloudflare Pages
+### Etapa 2 — Criar o projeto no Cloudflare Pages
 
 1. No painel da Cloudflare, clique em **"Workers & Pages"** no menu lateral
 2. Clique em **"Create"** → aba **"Pages"** → **"Connect to Git"**
 3. Conecte sua conta do GitHub quando solicitado
-4. Selecione o repositório que você criou na Etapa 1
+4. Selecione o repositório que você copiou do template
 5. Em **"Build settings"**, deixe tudo em branco (não há build step)
 6. Clique em **"Save and Deploy"**
 7. Aguarde o deploy terminar e anote a URL gerada (ex: `https://seu-projeto.pages.dev`)
 
 ---
 
-### Etapa 4 — Criar o app no Facebook para Desenvolvedores
+### Etapa 3 — Criar o app no Facebook para Desenvolvedores
 
 1. Acesse [developers.facebook.com](https://developers.facebook.com) e faça login
 2. Clique em **"Meus Apps"** → **"Criar App"**
@@ -78,17 +53,17 @@ Se preferir fazer manual, siga o passo a passo abaixo.
 
 ---
 
-### Etapa 5 — Vincular a conta de anúncios ao app
+### Etapa 4 — Vincular a conta de anúncios ao app
 
 1. Acesse o Business Manager em [business.facebook.com](https://business.facebook.com)
 2. Vá em **"Configurações do Negócio"** → **"Contas"** → **"Apps"**
-3. Localize o app que você criou na Etapa 4 e clique nele
+3. Localize o app que você criou na Etapa 3 e clique nele
 4. Clique em **"Adicionar Ativos"** → selecione **"Contas de Anúncios"**
 5. Marque a conta de anúncios do cliente e clique em **"Salvar Alterações"**
 
 ---
 
-### Etapa 6 — Criar o usuário do sistema e gerar o token
+### Etapa 5 — Criar o usuário do sistema e gerar o token
 
 1. No Business Manager ([business.facebook.com](https://business.facebook.com)), vá em **"Configurações do Negócio"**
 2. No menu lateral, clique em **"Usuários"** → **"Usuários do Sistema"**
@@ -97,7 +72,7 @@ Se preferir fazer manual, siga o passo a passo abaixo.
 5. Selecione **"Contas de Anúncios"**, escolha a conta do cliente e marque a permissão **"Gerenciar campanhas"**
 6. Clique em **"Salvar Alterações"**
 7. Volte ao usuário do sistema e clique em **"Gerar Novo Token"**
-8. Selecione o app que você criou na Etapa 4
+8. Selecione o app que você criou na Etapa 3
 9. Marque as permissões: `ads_read`, `ads_management`, `read_insights`
 10. Clique em **"Gerar Token"**
 11. **Copie e salve o token gerado** — ele só aparece uma vez
@@ -106,7 +81,7 @@ Se preferir fazer manual, siga o passo a passo abaixo.
 
 ---
 
-### Etapa 7 — Configurar os secrets no Cloudflare Pages
+### Etapa 6 — Configurar os secrets no Cloudflare Pages
 
 1. No painel da Cloudflare, vá em **"Workers & Pages"** → clique no seu projeto
 2. Clique em **"Settings"** → **"Environment Variables"**
@@ -114,7 +89,7 @@ Se preferir fazer manual, siga o passo a passo abaixo.
 
 | Nome | Valor |
 |------|-------|
-| `META_ACCESS_TOKEN` | O token gerado na Etapa 6 |
+| `META_ACCESS_TOKEN` | O token gerado na Etapa 5 |
 | `META_AD_ACCOUNT_ID` | O ID da conta **sem** o prefixo `act_` (só os números) |
 
 4. Clique em **"Save"**
@@ -122,7 +97,7 @@ Se preferir fazer manual, siga o passo a passo abaixo.
 
 ---
 
-### Etapa 8 — Personalizar o dashboard para o cliente
+### Etapa 7 — Personalizar o dashboard para o cliente
 
 Abra o repositório no Claude Code e peça para ele personalizar. Ou faça manualmente:
 
@@ -149,7 +124,7 @@ Após editar, faça commit e push. O Cloudflare vai fazer o deploy automaticamen
 
 ---
 
-### Etapa 9 — Verificar se está tudo funcionando
+### Etapa 8 — Verificar se está tudo funcionando
 
 1. Acesse a URL do seu projeto (ex: `https://seu-projeto.pages.dev`)
 2. O dashboard deve carregar com os dados reais da conta de anúncios
