@@ -1,0 +1,9 @@
+# Cloudflare Pages — Meta Ads Dashboard
+# Usado apenas para desenvolvimento local com: wrangler pages dev .
+
+name = "meta-ads-dashboard"
+pages_build_output_dir = "."
+compatibility_date = "2024-01-01"
+
+# Para rodar localmente com as variáveis de ambiente:
+# wrangler pages dev . --binding META_ACCESS_TOKEN=seu_token --binding META_AD_ACCOUNT_ID=seu_account_id

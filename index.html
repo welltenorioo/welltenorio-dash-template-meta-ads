@@ -1,0 +1,3388 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meta Ads Dashboard</title>
+  <link rel="icon" type="image/webp" href="assets/logo.webp" />
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+  <!-- Google Fonts: Fira Code + Fira Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Fira Sans', 'system-ui', 'sans-serif'],
+            mono: ['Fira Code', 'monospace'],
+          },
+          colors: {
+            surface: {
+              DEFAULT: '#0a0a0f',
+              2: '#111118',
+              3: '#18181f',
+              4: '#1e1e2a',
+              5: '#252535',
+            },
+            border: { DEFAULT: '#1e1e2a', strong: '#2e2e40' },
+            accent: {
+              DEFAULT: '#6366f1',
+              hover: '#818cf8',
+              muted: '#6366f120',
+            },
+            violet: { DEFAULT: '#8b5cf6', muted: '#8b5cf620' },
+            success: { DEFAULT: '#10b981', muted: '#10b98115' },
+            danger:  { DEFAULT: '#ef4444', muted: '#ef444415' },
+            warn:    { DEFAULT: '#f59e0b', muted: '#f59e0b15' },
+            sky:     { DEFAULT: '#38bdf8', muted: '#38bdf820' },
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    /* ── Z-index scale ── */
+    :root {
+      --z-content:  0;
+      --z-overlay: 30;
+      --z-sidebar: 40;
+      --z-toast:   50;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: #0a0a0f;
+      color: #e2e8f0;
+      font-family: 'Fira Sans', system-ui, sans-serif;
+      min-height: 100dvh;
+      overscroll-behavior-y: contain;
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0a0a0f; }
+    ::-webkit-scrollbar-thumb { background: #2e2e40; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #6366f1; }
+
+    /* ── Skeleton ── */
+    .skeleton {
+      background: linear-gradient(90deg, #18181f 25%, #252535 50%, #18181f 75%);
+      background-size: 200% 100%;
+      animation: skeleton-shimmer 1.5s infinite;
+      border-radius: 8px;
+    }
+    @keyframes skeleton-shimmer {
+      0%   { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    /* ── Card ── */
+    .card {
+      background: #111118;
+      border: 1px solid #1e1e2a;
+      border-radius: 12px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .card:hover { border-color: #2e2e40; }
+
+    /* ── KPI card gradient accent ── */
+    .kpi-accent-indigo  { background: linear-gradient(135deg, #6366f120 0%, transparent 70%); }
+    .kpi-accent-violet  { background: linear-gradient(135deg, #8b5cf620 0%, transparent 70%); }
+    .kpi-accent-sky     { background: linear-gradient(135deg, #38bdf820 0%, transparent 70%); }
+    .kpi-accent-emerald { background: linear-gradient(135deg, #10b98120 0%, transparent 70%); }
+    .kpi-accent-amber   { background: linear-gradient(135deg, #f59e0b20 0%, transparent 70%); }
+    .kpi-accent-rose    { background: linear-gradient(135deg, #f4376320 0%, transparent 70%); }
+    .kpi-accent-cyan    { background: linear-gradient(135deg, #06b6d420 0%, transparent 70%); }
+    .kpi-accent-lime    { background: linear-gradient(135deg, #84cc1620 0%, transparent 70%); }
+    .kpi-accent-orange  { background: linear-gradient(135deg, #f9731620 0%, transparent 70%); }
+    .kpi-accent-pink    { background: linear-gradient(135deg, #e879f920 0%, transparent 70%); }
+
+    /* ── Metric toggle chips (daily chart) ── */
+    .metric-toggle {
+      padding: 4px 10px; border-radius: 999px;
+      font-size: 11px; font-weight: 500;
+      cursor: pointer; transition: all 0.15s;
+      border: 1px solid #2e2e40;
+      background: #18181f; color: #64748b;
+      white-space: nowrap; user-select: none;
+    }
+    .metric-toggle:hover { color: #94a3b8; border-color: #475569; }
+
+    /* ── Sidebar ── */
+    #sidebar { transition: transform 0.3s ease; }
+    .nav-link {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 14px; border-radius: 8px;
+      min-height: 44px; /* touch target */
+      color: #94a3b8; font-size: 13.5px; font-weight: 500;
+      transition: all 0.15s;
+      cursor: pointer;
+    }
+    .nav-link:hover { color: #e2e8f0; background: #18181f; }
+    .nav-link.active { color: #818cf8; background: #6366f115; }
+    .nav-link svg { flex-shrink: 0; }
+    .nav-label { transition: opacity 0.15s; }
+
+    /* ── Badge ── */
+    .badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px; border-radius: 999px;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.02em;
+    }
+    .badge-success { background: #10b98120; color: #34d399; border: 1px solid #10b98130; }
+    .badge-danger  { background: #ef444420; color: #f87171; border: 1px solid #ef444430; }
+    .badge-warn    { background: #f59e0b20; color: #fbbf24; border: 1px solid #f59e0b30; }
+    .badge-neutral { background: #6366f115; color: #a5b4fc; border: 1px solid #6366f130; }
+
+    /* ── Table ── */
+    .data-table th {
+      background: #18181f; color: #64748b;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+      padding: 10px 14px; cursor: pointer; user-select: none;
+      white-space: nowrap; transition: color 0.15s;
+    }
+    .data-table th:hover { color: #a5b4fc; }
+    .data-table td { padding: 11px 14px; font-size: 13px; border-bottom: 1px solid #1e1e2a; }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background: #18181f; }
+    .data-table .mono { font-family: 'Fira Code', monospace; font-size: 12.5px; }
+
+    /* ── Table scroll shadow ── */
+    .table-scroll-wrap {
+      position: relative;
+      overflow-x: auto;
+    }
+    .table-scroll-wrap::after {
+      content: '';
+      position: absolute;
+      top: 0; right: 0; bottom: 0;
+      width: 40px;
+      background: linear-gradient(to right, transparent, #111118);
+      pointer-events: none;
+      border-radius: 0 12px 12px 0;
+    }
+
+    /* ── Trend arrow ── */
+    .trend-up   { color: #10b981; }
+    .trend-down { color: #ef4444; }
+    .trend-flat { color: #64748b; }
+
+    /* ── Date selector ── */
+    .date-btn {
+      padding: 6px 12px; border-radius: 8px;
+      min-height: 36px; /* touch target */
+      font-size: 12.5px; font-weight: 500;
+      color: #94a3b8; background: #18181f; border: 1px solid #1e1e2a;
+      cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    .date-btn:hover { color: #e2e8f0; border-color: #2e2e40; }
+    .date-btn.active { color: #818cf8; background: #6366f115; border-color: #6366f140; }
+
+    /* ── KPI value — evita overflow do card ── */
+    .kpi-value {
+      font-size: clamp(15px, 2.8vw, 24px);
+      font-weight: 700;
+      font-family: ui-monospace, monospace;
+      color: #f1f5f9;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-height: 36px;
+      line-height: 1.4;
+    }
+
+    /* ── Filtros de data — mobile ── */
+    @media (max-width: 767px) {
+      #topbar-row {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      #topbar-row > div:last-child {
+        width: 100%;
+      }
+      #date-presets {
+        width: 100%;
+      }
+      #date-presets .date-btn {
+        flex: 1 1 auto;
+        text-align: center;
+        min-width: 48px;
+      }
+      #topbar-row > div:last-child > div:nth-child(2) {
+        width: 100%;
+        justify-content: space-between;
+      }
+      #topbar-row > div:last-child > div:nth-child(2) input {
+        flex: 1;
+        min-width: 0;
+        max-width: none !important;
+      }
+      #btn-refresh { width: 100%; justify-content: center; }
+    }
+
+    /* ── Breakdown toggle list/pie ── */
+    .breakdown-toggle { display:flex; gap:2px; background:#0f0f17; border:1px solid #1e1e2a; border-radius:6px; padding:2px; }
+    .btog { display:flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:4px; border:none; background:transparent; color:#475569; cursor:pointer; transition:background .15s,color .15s; }
+    .btog:hover { color:#94a3b8; }
+    .btog.active { background:#6366f120; color:#818cf8; }
+
+    /* ── Tooltip custom ── */
+    .chartjs-tooltip {
+      background: #18181f !important;
+      border: 1px solid #2e2e40 !important;
+      border-radius: 8px !important;
+      padding: 8px 12px !important;
+    }
+
+    /* ── Fade-in ── */
+    .fade-in { animation: fadeIn 0.4s ease forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+    /* ── Pulse dot ── */
+    .pulse-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #10b981;
+      animation: pulse-ring 2s ease-out infinite;
+    }
+    @keyframes pulse-ring {
+      0%   { box-shadow: 0 0 0 0 #10b98160; }
+      70%  { box-shadow: 0 0 0 8px transparent; }
+      100% { box-shadow: 0 0 0 0 transparent; }
+    }
+
+    /* ── Overlay mobile ── */
+    #sidebar-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.55);
+      z-index: 39; /* abaixo do sidebar (40) */
+    }
+    #sidebar-overlay.open { display: block; }
+
+    /* ══════════════════════════════════════════════════════
+       RESPONSIVE — 3 tiers
+       Desktop ≥1024px  : full sidebar 224px (default)
+       Tablet 768-1023px: icon sidebar 64px
+       Mobile  <768px   : no sidebar + bottom nav
+    ══════════════════════════════════════════════════════ */
+
+    /* ── Sidebar mobile only: slide-in overlay ── */
+    @media (max-width: 767px) {
+      #sidebar {
+        transform: translateX(-100%);
+        position: fixed;
+        z-index: var(--z-sidebar);
+        transition: transform .25s cubic-bezier(.4,0,.2,1);
+        height: 100dvh;
+        overflow-y: auto;
+      }
+      #sidebar.open { transform: translateX(0); }
+    }
+
+    /* ── TABLET (768-1023px): icon-only sidebar ── */
+    @media (min-width: 768px) and (max-width: 1023px) {
+      /* Sidebar shrinks to 64px icon rail */
+      #sidebar { width: 64px !important; }
+      #sidebar-logo { padding: 12px; justify-content: center; gap: 0; }
+      #sidebar-logo .logo-text { display: none; }
+      #sidebar nav > p { display: none; }          /* section labels */
+      #sidebar nav > div.my-3 { margin: 6px 0; }  /* divider spacing */
+      .nav-link { justify-content: center; padding: 10px !important; gap: 0 !important; }
+      .nav-label { display: none; }
+      #sidebar-account { padding: 10px; justify-content: center; display: flex; }
+      #account-name, #account-currency { display: none; }
+      #menu-toggle { display: none !important; } /* icon rail replaces hamburger */
+
+      /* Main shifts right by icon rail width */
+      #main {
+        margin-left: 64px !important;
+        width: calc(100vw - 64px) !important;
+        padding: 16px !important;
+      }
+      #kpi-grid { grid-template-columns: repeat(3, 1fr) !important; }
+      #charts-row { grid-template-columns: 1fr !important; }
+    }
+
+    /* ── MOBILE (<768px): no sidebar, bottom nav ── */
+    @media (max-width: 767px) {
+      #sidebar { display: none !important; }
+      #sidebar-overlay { display: none !important; }
+      #menu-toggle { display: none !important; }
+      #main {
+        margin-left: 0 !important;
+        width: 100vw !important;
+        padding: 14px 12px 76px 12px !important; /* bottom clearance for nav */
+      }
+      #kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+      #charts-row { grid-template-columns: 1fr !important; }
+      .data-table { font-size: 11px !important; }
+      #funnel-stages { padding: 0 2px; }
+      #topbar-row { flex-direction: column; align-items: flex-start !important; gap: 8px !important; }
+      /* Date presets: horizontal scroll strip */
+      #date-presets {
+        flex-wrap: nowrap !important;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding-bottom: 2px;
+      }
+      #date-presets::-webkit-scrollbar { display: none; }
+      .card { border-radius: 10px; }
+      #bottom-nav { display: flex !important; }
+      #mobile-brand { display: flex !important; }
+    }
+
+    /* ── Bottom navigation bar (mobile only) ── */
+    #bottom-nav {
+      display: none;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: #0d0d14;
+      border-top: 1px solid #1e1e2a;
+      z-index: var(--z-sidebar);
+      padding: 0 4px;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      height: 60px;
+      align-items: stretch;
+      justify-content: space-around;
+    }
+    .bnav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      flex: 1;
+      padding: 6px 4px;
+      border-radius: 8px;
+      color: #475569;
+      font-size: 10px;
+      font-weight: 500;
+      cursor: pointer;
+      min-height: 44px;
+      transition: color 0.15s;
+    }
+    .bnav-item.active { color: #818cf8; }
+    .bnav-item svg { flex-shrink: 0; }
+
+    /* ── Tablet touch affordance on nav-link ── */
+    @media (min-width: 768px) and (max-width: 1023px) {
+      .bnav-item { display: none; } /* not used on tablet */
+    }
+
+    /* ── Refresh spin ── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     SIDEBAR
+══════════════════════════════════════════════════════════ -->
+<div id="sidebar-overlay" onclick="closeSidebar()"></div>
+<aside id="sidebar" class="fixed left-0 top-0 h-screen w-56 flex flex-col" style="background:#0d0d14; border-right:1px solid #1e1e2a; z-index:var(--z-sidebar);">
+
+  <!-- Logo -->
+  <div id="sidebar-logo" class="flex items-center gap-3 px-4 py-4 border-b" style="border-color:#1e1e2a;">
+    <img
+      src="assets/logo.webp"
+      alt="Logo"
+      width="36" height="36"
+      style="border-radius:8px; flex-shrink:0; display:block;"
+    />
+    <div class="logo-text">
+      <p class="text-sm font-semibold text-slate-100 leading-none">NOME_DO_CLIENTE</p>
+      <p class="text-xs text-slate-500 mt-0.5">Meta Ads</p>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <nav class="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+
+    <p class="px-3 mb-2 text-xs font-semibold text-slate-600 uppercase tracking-widest">Principal</p>
+
+    <a class="nav-link active" onclick="showSection('overview')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      <span class="nav-label">Visão Geral</span>
+    </a>
+
+    <a class="nav-link" onclick="showSection('campaigns')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      <span class="nav-label">Campanhas</span>
+    </a>
+
+    <a class="nav-link" onclick="showSection('adsets')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+      <span class="nav-label">Conjuntos de Anúncios</span>
+    </a>
+
+    <a class="nav-link" onclick="showSection('ads')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      <span class="nav-label">Criativos</span>
+    </a>
+
+    <div class="my-3 border-t" style="border-color:#1e1e2a;"></div>
+    <p class="px-3 mb-2 text-xs font-semibold text-slate-600 uppercase tracking-widest">Análises</p>
+
+    <a class="nav-link" onclick="showSection('funnel')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 4a1 1 0 0 1 1-1h16a1 1 0 0 1 .78 1.625L14 12.236V20a1 1 0 0 1-1.447.894l-4-2A1 1 0 0 1 8 17v-4.764L3.22 5.625A1 1 0 0 1 3 4z"/></svg>
+      <span class="nav-label">Funil</span>
+    </a>
+
+    <a class="nav-link" onclick="showSection('leads')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span class="nav-label">Leads</span>
+    </a>
+
+    <a class="nav-link" onclick="showSection('reports')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span class="nav-label">Relatórios</span>
+    </a>
+
+    <a class="nav-link" onclick="showSection('diagnostics')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span class="nav-label">Diagnósticos</span>
+    </a>
+
+  </nav>
+
+  <!-- Bottom: account status -->
+  <div id="sidebar-account" class="px-4 py-4 border-t" style="border-color:#1e1e2a;">
+    <div class="flex items-center gap-2">
+      <div class="pulse-dot"></div>
+      <span id="account-name" class="text-xs text-slate-400 truncate">Carregando conta…</span>
+    </div>
+    <p id="account-currency" class="text-xs text-slate-600 mt-1 pl-3">—</p>
+  </div>
+</aside>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     MAIN
+══════════════════════════════════════════════════════════ -->
+<main id="main" style="margin-left:224px; width:calc(100vw - 224px); min-height:100vh; padding:20px 24px; overflow-x: hidden;">
+
+  <!-- ── Mobile brand header (hidden on tablet/desktop) ── -->
+  <div id="mobile-brand" style="display:none;align-items:center;gap:10px;margin-bottom:14px;">
+    <img src="assets/logo.webp" alt="Logo" width="36" height="36"
+      style="border-radius:8px;flex-shrink:0;display:block;" />
+    <div>
+      <p style="font-size:14px;font-weight:600;color:#f1f5f9;line-height:1.2;">NOME_DO_CLIENTE</p>
+      <p style="font-size:11px;color:#64748b;margin-top:1px;">Meta Ads</p>
+    </div>
+  </div>
+
+  <!-- ── Top bar ── -->
+  <div id="topbar-row" class="flex flex-wrap items-center justify-between gap-3 mb-6" style="min-width:0;">
+
+    <!-- Mobile hamburger (tablet only — hidden on mobile via CSS) -->
+    <button id="menu-toggle" class="lg:hidden p-2 rounded-lg" style="background:#18181f; border:1px solid #1e1e2a;" onclick="toggleSidebar()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+
+    <div>
+      <h1 class="text-lg font-semibold text-slate-100">Visão Geral</h1>
+      <p class="text-xs text-slate-500 mt-0.5">Performance consolidada da conta</p>
+    </div>
+
+    <!-- Date range + refresh -->
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0;">
+
+      <!-- Preset buttons -->
+      <div style="display:flex;flex-wrap:wrap;gap:4px;" id="date-presets">
+        <button class="date-btn" data-preset="today">Hoje</button>
+        <button class="date-btn" data-preset="yesterday">Ontem</button>
+        <button class="date-btn" data-preset="last_7d">7d</button>
+        <button class="date-btn" data-preset="last_14d">14d</button>
+        <button class="date-btn" data-preset="last_30d">30d</button>
+        <button class="date-btn" data-preset="last_90d">90d</button>
+        <button class="date-btn active" data-preset="this_month">Este mês</button>
+        <button class="date-btn" data-preset="last_month">Mês ant.</button>
+      </div>
+
+      <!-- Custom range -->
+      <div style="display:flex;align-items:center;gap:4px;">
+        <input type="date" id="date-since" class="date-btn" style="color:#94a3b8;outline:none;max-width:130px;" />
+        <span style="color:#475569;font-size:11px;">→</span>
+        <input type="date" id="date-until" class="date-btn" style="color:#94a3b8;outline:none;max-width:130px;" />
+      </div>
+
+      <!-- Refresh -->
+      <button id="btn-refresh" onclick="loadAll()" class="date-btn" style="display:flex;align-items:center;gap:5px;color:#818cf8;border-color:#6366f140;background:#6366f110;white-space:nowrap;">
+        <svg id="icon-refresh" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Atualizar
+      </button>
+    </div>
+  </div>
+
+
+  <!-- ════════════════════════════════
+       SECTION: OVERVIEW
+  ════════════════════════════════ -->
+  <section id="section-overview" class="fade-in">
+
+    <!-- ── Indicador de período ── -->
+    <div id="period-indicator" class="flex items-center gap-2 mb-4 px-1" style="display:none;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span id="period-indicator-text" class="text-xs text-slate-500"></span>
+    </div>
+
+    <!-- ── KPI Cards ── -->
+    <div id="kpi-grid" class="grid gap-3 mb-5" style="grid-template-columns:repeat(auto-fill,minmax(155px,1fr)); min-width:0;">
+
+      <!-- 1. Valor Gasto -->
+      <div class="card p-4 kpi-accent-indigo">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-medium text-slate-500">Valor Gasto</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <p id="kpi-spend" class="kpi-value skeleton">&nbsp;</p>
+        <div class="flex items-center justify-between mt-1" style="min-height:18px;">
+          <p id="kpi-spend-sub" class="text-xs" style="color:#475569;"></p>
+          <span id="kpi-spend-delta" class="text-xs font-semibold" style="display:none;"></span>
+        </div>
+      </div>
+
+      <!-- 2. CPM -->
+      <div class="card p-4 kpi-accent-violet">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-medium text-slate-500">CPM</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        </div>
+        <p id="kpi-cpm" class="kpi-value skeleton">&nbsp;</p>
+        <div class="flex items-center justify-between mt-1" style="min-height:18px;">
+          <p id="kpi-cpm-sub" class="text-xs" style="color:#475569;"></p>
+          <span id="kpi-cpm-delta" class="text-xs font-semibold" style="display:none;"></span>
+        </div>
+      </div>
+
+      <!-- 3. CTR Link -->
+      <div class="card p-4 kpi-accent-amber">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-medium text-slate-500">CTR Link</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+        </div>
+        <p id="kpi-ctr" class="kpi-value skeleton">&nbsp;</p>
+        <div class="flex items-center justify-between mt-1" style="min-height:18px;">
+          <p id="kpi-ctr-sub" class="text-xs" style="color:#475569;"></p>
+          <span id="kpi-ctr-delta" class="text-xs font-semibold" style="display:none;"></span>
+        </div>
+      </div>
+
+      <!-- 4. CPC Link -->
+      <div class="card p-4 kpi-accent-rose">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-medium text-slate-500">CPC Link</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f43763" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        </div>
+        <p id="kpi-cpc" class="kpi-value skeleton">&nbsp;</p>
+        <div class="flex items-center justify-between mt-1" style="min-height:18px;">
+          <p id="kpi-cpc-sub" class="text-xs" style="color:#475569;"></p>
+          <span id="kpi-cpc-delta" class="text-xs font-semibold" style="display:none;"></span>
+        </div>
+      </div>
+
+      <!-- 5. Connect Rate -->
+      <div class="card p-4 kpi-accent-cyan">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-medium text-slate-500">Connect Rate</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        </div>
+        <p id="kpi-connect-rate" class="kpi-value skeleton">&nbsp;</p>
+        <div class="flex items-center justify-between mt-1" style="min-height:18px;">
+          <p id="kpi-connect-rate-sub" class="text-xs" style="color:#475569;"></p>
+          <span id="kpi-connect-rate-delta" class="text-xs font-semibold" style="display:none;"></span>
+        </div>
+      </div>
+
+      <!-- 6. Conversões -->
+      <div class="card p-4 kpi-accent-emerald">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-medium text-slate-500">Conversões</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <p id="kpi-conversions" class="kpi-value skeleton">&nbsp;</p>
+        <div class="flex items-center justify-between mt-1" style="min-height:18px;">
+          <p id="kpi-conversions-sub" class="text-xs" style="color:#475569;"></p>
+          <span id="kpi-conversions-delta" class="text-xs font-semibold" style="display:none;"></span>
+        </div>
+      </div>
+
+      <!-- 7. Taxa de Conversão -->
+      <div class="card p-4 kpi-accent-sky">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-medium text-slate-500">Taxa de Conversão</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <p id="kpi-conv-rate" class="kpi-value skeleton">&nbsp;</p>
+        <div class="flex items-center justify-between mt-1" style="min-height:18px;">
+          <p id="kpi-conv-rate-sub" class="text-xs" style="color:#475569;"></p>
+          <span id="kpi-conv-rate-delta" class="text-xs font-semibold" style="display:none;"></span>
+        </div>
+      </div>
+
+      <!-- 8. Custo por Conversão (CPA) -->
+      <div class="card p-4 kpi-accent-orange">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-medium text-slate-500">Custo/Conversão</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="12" y1="2" x2="12" y2="6"/></svg>
+        </div>
+        <p id="kpi-cpa" class="kpi-value skeleton">&nbsp;</p>
+        <div class="flex items-center justify-between mt-1" style="min-height:18px;">
+          <p id="kpi-cpa-sub" class="text-xs" style="color:#475569;"></p>
+          <span id="kpi-cpa-delta" class="text-xs font-semibold" style="display:none;"></span>
+        </div>
+      </div>
+
+      <!-- 9. ROAS -->
+      <div class="card p-4 kpi-accent-pink">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-medium text-slate-500">ROAS</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e879f9" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>
+        </div>
+        <p id="kpi-roas" class="kpi-value skeleton">&nbsp;</p>
+        <div class="flex items-center justify-between mt-1" style="min-height:18px;">
+          <p id="kpi-roas-sub" class="text-xs" style="color:#475569;"></p>
+          <span id="kpi-roas-delta" class="text-xs font-semibold" style="display:none;"></span>
+        </div>
+      </div>
+
+    </div>
+    <!-- end KPI grid -->
+
+
+    <!-- ── Charts Row ── -->
+    <div id="charts-row" class="grid gap-4 mb-5" style="grid-template-columns:minmax(0,2fr) minmax(0,1fr);">
+
+      <!-- Line chart: multi-metric -->
+      <div class="card p-5">
+        <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+          <div>
+            <h2 class="text-sm font-semibold text-slate-200">Evolução Diária</h2>
+            <p class="text-xs text-slate-500 mt-0.5">Clique nas métricas para ativar/desativar</p>
+          </div>
+          <div id="chart-metric-toggles" class="flex flex-wrap gap-1.5"></div>
+        </div>
+        <div style="height:240px; position:relative;">
+          <div id="chart-line-skeleton" class="skeleton w-full h-full rounded-lg"></div>
+          <canvas id="chart-line" style="display:none;"></canvas>
+        </div>
+      </div>
+
+      <!-- Doughnut: spend by campaign -->
+      <div class="card p-5">
+        <div class="mb-4">
+          <h2 class="text-sm font-semibold text-slate-200">Gasto por Campanha</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Distribuição do investimento</p>
+        </div>
+        <div style="height:200px; position:relative;" class="flex items-center justify-center">
+          <div id="chart-donut-skeleton" class="skeleton w-full h-full rounded-lg"></div>
+          <canvas id="chart-donut" style="display:none;"></canvas>
+        </div>
+        <div id="donut-legend" class="mt-3 space-y-1.5"></div>
+      </div>
+
+    </div>
+    <!-- end charts row -->
+
+
+
+  </section>
+
+
+  <!-- ════════════════════════════════
+       SECTION: CAMPAIGNS
+  ════════════════════════════════ -->
+  <section id="section-campaigns" class="fade-in" style="display:none;">
+
+    <!-- Bar chart -->
+    <div class="card p-5 mb-5">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h2 class="text-sm font-semibold text-slate-200">Performance por Campanha</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Gasto, conversões e custo por conversão</p>
+        </div>
+        <div class="flex gap-3 text-xs">
+          <span class="flex items-center gap-1.5 text-slate-400"><span class="w-3 h-2 rounded inline-block" style="background:#6366f1;"></span>Gasto</span>
+          <span class="flex items-center gap-1.5 text-slate-400"><span class="w-3 h-2 rounded inline-block" style="background:#10b981;"></span>Conv.</span>
+          <span class="flex items-center gap-1.5 text-slate-400"><span class="w-2 h-2 rounded-full inline-block" style="background:#f59e0b;"></span>CPA</span>
+        </div>
+      </div>
+      <div style="height:220px; position:relative;">
+        <div id="chart-bar-skeleton" class="skeleton w-full h-full rounded-lg"></div>
+        <canvas id="chart-bar" style="display:none;"></canvas>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="card overflow-hidden">
+      <div class="flex items-center justify-between px-5 py-3.5 border-b" style="border-color:#1e1e2a;">
+        <h2 class="text-sm font-semibold text-slate-200">Detalhamento de Campanhas</h2>
+        <div class="flex gap-2 items-center">
+          <button id="btn-filter-spend" onclick="toggleFilterSpend()" class="date-btn text-xs flex items-center gap-1.5" style="background:#10b98120;border-color:#10b98140;color:#10b981;">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M3 4a1 1 0 0 1 1-1h16a1 1 0 0 1 .78 1.625L14 13.236V20a1 1 0 0 1-1.447.894l-4-2A1 1 0 0 1 8 18v-4.764L3.22 5.625A1 1 0 0 1 3 4z"/></svg>
+            Com gasto
+          </button>
+          <button id="btn-filter-active" onclick="toggleFilterActive()" class="date-btn text-xs flex items-center gap-1.5">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="20 6 9 17 4 12"/></svg>
+            Ativos
+          </button>
+          <span id="campaigns-count" class="badge badge-neutral">— campanhas</span>
+          <button onclick="exportCSV()" class="date-btn text-xs flex items-center gap-1.5">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            CSV
+          </button>
+        </div>
+      </div>
+
+      <div class="table-scroll-wrap">
+        <table class="data-table w-full">
+          <thead>
+            <tr>
+              <th onclick="sortBy('campaigns','campaign_name')" id="th-campaigns-campaign_name" style="min-width:180px;text-align:left;">Campanha</th>
+              <th onclick="sortBy('campaigns','status')"        id="th-campaigns-status"        style="text-align:left;">Status</th>
+              <th onclick="sortBy('campaigns','spend')"         id="th-campaigns-spend"         style="text-align:right;">Gasto</th>
+              <th onclick="sortBy('campaigns','cpm')"           id="th-campaigns-cpm"           style="text-align:right;">CPM</th>
+              <th onclick="sortBy('campaigns','ctr')"           id="th-campaigns-ctr"           style="text-align:right;">CTR Link</th>
+              <th onclick="sortBy('campaigns','cpc')"           id="th-campaigns-cpc"           style="text-align:right;">CPC Link</th>
+              <th onclick="sortBy('campaigns','connectRate')"   id="th-campaigns-connectRate"   style="text-align:right;">Connect Rate</th>
+              <th onclick="sortBy('campaigns','conversions')"   id="th-campaigns-conversions"   style="text-align:right;">Conv.</th>
+              <th onclick="sortBy('campaigns','convRate')"      id="th-campaigns-convRate"      style="text-align:right;">Taxa Conv.</th>
+              <th onclick="sortBy('campaigns','cpa')"           id="th-campaigns-cpa"           style="text-align:right;">CPA</th>
+              <th onclick="sortBy('campaigns','roas')"          id="th-campaigns-roas"          style="text-align:right;">ROAS</th>
+            </tr>
+          </thead>
+          <tbody id="campaigns-tbody">
+            <tr><td colspan="11" class="py-8 text-center text-slate-500 text-sm">Carregando campanhas…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </section>
+
+
+  <!-- ════════════════════════════════
+       SECTION: AD SETS
+  ════════════════════════════════ -->
+  <section id="section-adsets" class="fade-in" style="display:none;">
+    <div class="card p-5 mb-5">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h2 class="text-sm font-semibold text-slate-200">Performance por Conjunto de Anúncios</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Gasto, conversões e custo por conversão</p>
+        </div>
+        <div class="flex gap-3 text-xs">
+          <span class="flex items-center gap-1.5 text-slate-400"><span class="w-3 h-2 rounded inline-block" style="background:#6366f1;"></span>Gasto</span>
+          <span class="flex items-center gap-1.5 text-slate-400"><span class="w-3 h-2 rounded inline-block" style="background:#10b981;"></span>Conv.</span>
+          <span class="flex items-center gap-1.5 text-slate-400"><span class="w-2 h-2 rounded-full inline-block" style="background:#f59e0b;"></span>CPA</span>
+        </div>
+      </div>
+      <div style="height:220px;position:relative;">
+        <div id="chart-bar-adsets-skeleton" class="skeleton w-full h-full rounded-lg"></div>
+        <canvas id="chart-bar-adsets" style="display:none;"></canvas>
+      </div>
+    </div>
+
+    <div class="card overflow-hidden">
+      <div class="flex items-center justify-between px-5 py-3.5 border-b" style="border-color:#1e1e2a;">
+        <h2 class="text-sm font-semibold text-slate-200">Conjuntos de Anúncios</h2>
+        <div class="flex gap-2 items-center">
+          <button id="btn-filter-spend-adsets" onclick="toggleFilterSpend()" class="date-btn text-xs flex items-center gap-1.5" style="background:#10b98120;border-color:#10b98140;color:#10b981;">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M3 4a1 1 0 0 1 1-1h16a1 1 0 0 1 .78 1.625L14 13.236V20a1 1 0 0 1-1.447.894l-4-2A1 1 0 0 1 8 18v-4.764L3.22 5.625A1 1 0 0 1 3 4z"/></svg>
+            Com gasto
+          </button>
+          <button id="btn-filter-active-adsets" onclick="toggleFilterActive()" class="date-btn text-xs flex items-center gap-1.5">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="20 6 9 17 4 12"/></svg>
+            Ativos
+          </button>
+          <span id="adsets-count" class="badge badge-neutral">— conjuntos</span>
+        </div>
+      </div>
+      <div class="table-scroll-wrap">
+        <table class="data-table w-full">
+          <thead>
+            <tr>
+              <th onclick="sortBy('adsets','adset_name')"    id="th-adsets-adset_name"    style="min-width:200px;text-align:left;">Conjunto</th>
+              <th onclick="sortBy('adsets','campaign_name')" id="th-adsets-campaign_name" style="text-align:left;">Campanha</th>
+              <th onclick="sortBy('adsets','status')"        id="th-adsets-status"        style="text-align:left;">Status</th>
+              <th onclick="sortBy('adsets','spend')"         id="th-adsets-spend"         style="text-align:right;">Gasto</th>
+              <th onclick="sortBy('adsets','cpm')"           id="th-adsets-cpm"           style="text-align:right;">CPM</th>
+              <th onclick="sortBy('adsets','ctr')"           id="th-adsets-ctr"           style="text-align:right;">CTR Link</th>
+              <th onclick="sortBy('adsets','cpc')"           id="th-adsets-cpc"           style="text-align:right;">CPC Link</th>
+              <th onclick="sortBy('adsets','connectRate')"   id="th-adsets-connectRate"   style="text-align:right;">Connect Rate</th>
+              <th onclick="sortBy('adsets','conversions')"   id="th-adsets-conversions"   style="text-align:right;">Conv.</th>
+              <th onclick="sortBy('adsets','convRate')"      id="th-adsets-convRate"      style="text-align:right;">Taxa Conv.</th>
+              <th onclick="sortBy('adsets','cpa')"           id="th-adsets-cpa"           style="text-align:right;">CPA</th>
+              <th onclick="sortBy('adsets','roas')"          id="th-adsets-roas"          style="text-align:right;">ROAS</th>
+            </tr>
+          </thead>
+          <tbody id="adsets-tbody">
+            <tr><td colspan="12" class="py-8 text-center text-slate-500 text-sm">Carregando conjuntos…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════
+       SECTION: ADS / CRIATIVOS
+  ════════════════════════════════ -->
+  <section id="section-ads" class="fade-in" style="display:none;">
+    <div class="card overflow-hidden">
+      <div class="flex items-center justify-between px-5 py-3.5 border-b" style="border-color:#1e1e2a;">
+        <h2 class="text-sm font-semibold text-slate-200">Criativos / Anúncios</h2>
+        <div class="flex gap-2 items-center">
+          <button id="btn-filter-spend-ads" onclick="toggleFilterSpend()" class="date-btn text-xs flex items-center gap-1.5" style="background:#10b98120;border-color:#10b98140;color:#10b981;">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M3 4a1 1 0 0 1 1-1h16a1 1 0 0 1 .78 1.625L14 13.236V20a1 1 0 0 1-1.447.894l-4-2A1 1 0 0 1 8 18v-4.764L3.22 5.625A1 1 0 0 1 3 4z"/></svg>
+            Com gasto
+          </button>
+          <button id="btn-filter-active-ads" onclick="toggleFilterActive()" class="date-btn text-xs flex items-center gap-1.5">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="20 6 9 17 4 12"/></svg>
+            Ativos
+          </button>
+          <span id="ads-count" class="badge badge-neutral">— anúncios</span>
+        </div>
+      </div>
+      <div class="table-scroll-wrap">
+        <table class="data-table w-full">
+          <thead>
+            <tr>
+              <th onclick="sortBy('ads','ad_name')"      id="th-ads-ad_name"      style="min-width:240px;text-align:left;">Anúncio</th>
+              <th onclick="sortBy('ads','status')"       id="th-ads-status"       style="text-align:left;">Status</th>
+              <th onclick="sortBy('ads','spend')"        id="th-ads-spend"        style="text-align:right;">Gasto</th>
+              <th onclick="sortBy('ads','cpm')"          id="th-ads-cpm"          style="text-align:right;">CPM</th>
+              <th onclick="sortBy('ads','ctr')"          id="th-ads-ctr"          style="text-align:right;">CTR Link</th>
+              <th onclick="sortBy('ads','cpc')"          id="th-ads-cpc"          style="text-align:right;">CPC Link</th>
+              <th onclick="sortBy('ads','connectRate')"  id="th-ads-connectRate"  style="text-align:right;">Connect Rate</th>
+              <th onclick="sortBy('ads','conversions')"  id="th-ads-conversions"  style="text-align:right;">Conv.</th>
+              <th onclick="sortBy('ads','convRate')"     id="th-ads-convRate"     style="text-align:right;">Taxa Conv.</th>
+              <th onclick="sortBy('ads','cpa')"          id="th-ads-cpa"          style="text-align:right;">CPA</th>
+              <th onclick="sortBy('ads','roas')"         id="th-ads-roas"         style="text-align:right;">ROAS</th>
+              <th style="text-align:center;">Ver</th>
+            </tr>
+          </thead>
+          <tbody id="ads-tbody">
+            <tr><td colspan="12" class="py-8 text-center text-slate-500 text-sm">Carregando anúncios…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════
+       SECTION: FUNIL
+  ════════════════════════════════ -->
+  <section id="section-funnel" class="fade-in" style="display:none;">
+
+    <!-- Header + toggle -->
+    <div class="card p-5 mb-5">
+      <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <div>
+          <h2 class="text-sm font-semibold text-slate-200">Funil de Conversão</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Da impressão até a conversão final</p>
+        </div>
+        <div class="flex gap-2">
+          <button id="funnel-btn-leads" onclick="setFunnelMode('leads')"
+            class="date-btn text-xs" style="background:#6366f120;border-color:#6366f150;color:#818cf8;font-weight:600;">
+            🎯 Leads
+          </button>
+          <button id="funnel-btn-sales" onclick="setFunnelMode('sales')"
+            class="date-btn text-xs" style="color:#64748b;">
+            🛒 Vendas
+          </button>
+        </div>
+      </div>
+
+      <!-- Funil visual -->
+      <div id="funnel-stages" style="max-width:720px;margin:0 auto;"></div>
+    </div>
+
+    <!-- Resumo de taxas -->
+    <div class="grid gap-4 mb-5" id="funnel-summary-grid" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr));"></div>
+
+  </section>
+
+  <!-- ════════════════════════════════
+       SECTION: RELATÓRIOS
+  ════════════════════════════════ -->
+  <section id="section-reports" class="fade-in" style="display:none;">
+    <div class="grid gap-4" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr));min-width:0;">
+
+      <div class="card p-6 cursor-pointer hover:border-indigo-500/40 transition-colors" onclick="exportCSV('campaigns')">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center mb-4" style="background:#6366f115;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        </div>
+        <h3 class="text-sm font-semibold text-slate-200 mb-1">Relatório de Campanhas</h3>
+        <p class="text-xs text-slate-500 mb-4">Gasto, impressões, cliques, CTR, ROAS por campanha</p>
+        <span class="badge badge-neutral">Exportar CSV</span>
+      </div>
+
+      <div class="card p-6 cursor-pointer hover:border-violet-500/40 transition-colors" onclick="exportCSV('adsets')">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center mb-4" style="background:#8b5cf615;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+        </div>
+        <h3 class="text-sm font-semibold text-slate-200 mb-1">Relatório de Conjuntos</h3>
+        <p class="text-xs text-slate-500 mb-4">Performance detalhada por conjunto de anúncios</p>
+        <span class="badge badge-neutral">Exportar CSV</span>
+      </div>
+
+      <div class="card p-6 cursor-pointer hover:border-sky-500/40 transition-colors" onclick="exportCSV('ads')">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center mb-4" style="background:#38bdf815;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><rect x="3" y="3" width="18" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        </div>
+        <h3 class="text-sm font-semibold text-slate-200 mb-1">Relatório de Criativos</h3>
+        <p class="text-xs text-slate-500 mb-4">Performance de cada anúncio individualmente</p>
+        <span class="badge badge-neutral">Exportar CSV</span>
+      </div>
+
+    </div>
+
+    <div class="card p-5 mt-4">
+      <h3 class="text-sm font-semibold text-slate-200 mb-1">Período do relatório</h3>
+      <p class="text-xs text-slate-500 mb-3">Os relatórios exportam os dados do período selecionado no topo da página.</p>
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="badge badge-neutral" id="report-period-label">Período: últimos 7 dias</span>
+        <span class="text-xs text-slate-600">Clique nos cards acima para exportar</span>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════
+       SECTION: DIAGNÓSTICOS
+  ════════════════════════════════ -->
+  <section id="section-diagnostics" class="fade-in" style="display:none;">
+    <div class="grid gap-4 mb-5" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr));">
+
+      <div class="card p-5">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-9 h-9 rounded-lg flex items-center justify-center" style="background:#10b98115;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <div>
+            <p class="text-sm font-semibold text-slate-200">Pixel do Meta</p>
+            <p class="text-xs text-slate-500">Status de rastreamento</p>
+          </div>
+        </div>
+        <div id="diag-pixel" class="text-xs text-slate-400">Verificando…</div>
+      </div>
+
+      <div class="card p-5">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-9 h-9 rounded-lg flex items-center justify-center" style="background:#6366f115;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          </div>
+          <div>
+            <p class="text-sm font-semibold text-slate-200">Conta de Anúncios</p>
+            <p class="text-xs text-slate-500">Informações gerais</p>
+          </div>
+        </div>
+        <div id="diag-account" class="text-xs text-slate-400">Verificando…</div>
+      </div>
+
+      <div class="card p-5">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-9 h-9 rounded-lg flex items-center justify-center" style="background:#f59e0b15;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div>
+            <p class="text-sm font-semibold text-slate-200">Última Atualização</p>
+            <p class="text-xs text-slate-500">Cache dos dados</p>
+          </div>
+        </div>
+        <div id="diag-cache" class="text-xs text-slate-400">—</div>
+      </div>
+
+    </div>
+
+    <div class="card p-5">
+      <h3 class="text-sm font-semibold text-slate-200 mb-3">Informações da API</h3>
+      <div id="diag-api-info" class="space-y-2 text-xs text-slate-400">Carregando…</div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════
+       SECTION: LEADS (Google Sheets)
+  ════════════════════════════════ -->
+  <section id="section-leads" class="fade-in" style="display:none;">
+
+    <!-- ── KPI row ── -->
+    <div class="grid gap-3 mb-5" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr));">
+
+      <!-- Total Leads -->
+      <div class="card p-4 kpi-accent-emerald">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-medium text-slate-500">Leads (Planilha)</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <p id="kpi-leads-total" class="kpi-value skeleton">&nbsp;</p>
+        <p id="kpi-leads-period" class="text-xs mt-1" style="color:#475569;min-height:18px;"></p>
+      </div>
+
+      <!-- Meta vs Planilha -->
+      <div class="card p-4 kpi-accent-indigo">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-medium text-slate-500">Meta vs Planilha</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>
+        </div>
+        <div id="kpi-leads-compare" class="skeleton" style="min-height:36px;border-radius:8px;">&nbsp;</div>
+        <p id="kpi-leads-compare-sub" class="text-xs mt-1" style="color:#475569;min-height:18px;"></p>
+      </div>
+
+    </div>
+
+    <!-- ── Gráfico: leads por dia ── -->
+    <div class="card p-5 mb-5">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h2 class="text-sm font-semibold text-slate-200">Leads por Dia</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Volume diário de captação no período</p>
+        </div>
+        <span id="leads-chart-badge" class="badge badge-neutral" style="display:none;"></span>
+      </div>
+      <div style="height:220px; position:relative;">
+        <div id="chart-leads-skeleton" class="skeleton w-full h-full rounded-lg"></div>
+        <canvas id="chart-leads" style="display:none;"></canvas>
+      </div>
+    </div>
+
+    <!-- ── Breakdowns grid ── -->
+    <div class="grid gap-4 mb-5" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr));">
+
+      <!-- 1. Por Origem -->
+      <div class="card overflow-hidden">
+        <div class="px-5 py-3.5 border-b flex items-center justify-between" style="border-color:#1e1e2a;">
+          <h2 class="text-sm font-semibold text-slate-200">Por Origem</h2>
+          <div class="flex items-center gap-2">
+            <span id="leads-origem-count" class="badge badge-neutral">—</span>
+            <div class="breakdown-toggle" data-id="origem">
+              <button class="btog active" data-view="list" onclick="toggleBreakdownView('origem','list')" title="Lista"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
+              <button class="btog" data-view="pie" onclick="toggleBreakdownView('origem','pie')" title="Pizza"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></button>
+            </div>
+          </div>
+        </div>
+        <div id="leads-origem-list" style="overflow-x:auto;">
+          <table class="data-table w-full">
+            <thead><tr>
+              <th style="min-width:140px;text-align:left;">Origem</th>
+              <th style="text-align:right;width:60px;">Leads</th>
+              <th style="text-align:right;width:52px;">%</th>
+            </tr></thead>
+            <tbody id="leads-origem-tbody">
+              <tr><td colspan="3" class="py-6 text-center text-slate-500 text-sm">Carregando…</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="leads-origem-pie" style="display:none;padding:12px 16px 16px;"><canvas id="chart-bd-origem" height="220"></canvas></div>
+      </div>
+
+      <!-- 2. Por Rede (Source) -->
+      <div class="card overflow-hidden">
+        <div class="px-5 py-3.5 border-b flex items-center justify-between" style="border-color:#1e1e2a;">
+          <h2 class="text-sm font-semibold text-slate-200">Por Rede</h2>
+          <div class="flex items-center gap-2">
+            <span id="leads-source-count" class="badge badge-neutral">—</span>
+            <div class="breakdown-toggle" data-id="source">
+              <button class="btog active" data-view="list" onclick="toggleBreakdownView('source','list')" title="Lista"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
+              <button class="btog" data-view="pie" onclick="toggleBreakdownView('source','pie')" title="Pizza"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></button>
+            </div>
+          </div>
+        </div>
+        <div id="leads-source-list" style="overflow-x:auto;">
+          <table class="data-table w-full">
+            <thead><tr>
+              <th style="min-width:140px;text-align:left;">Rede (Source)</th>
+              <th style="text-align:right;width:60px;">Leads</th>
+              <th style="text-align:right;width:52px;">%</th>
+            </tr></thead>
+            <tbody id="leads-source-tbody">
+              <tr><td colspan="3" class="py-6 text-center text-slate-500 text-sm">Carregando…</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="leads-source-pie" style="display:none;padding:12px 16px 16px;"><canvas id="chart-bd-source" height="220"></canvas></div>
+      </div>
+
+      <!-- 3. Por Campanha (Campaign) -->
+      <div class="card overflow-hidden">
+        <div class="px-5 py-3.5 border-b flex items-center justify-between" style="border-color:#1e1e2a;">
+          <h2 class="text-sm font-semibold text-slate-200">Por Campanha</h2>
+          <div class="flex items-center gap-2">
+            <span id="leads-campaign-count" class="badge badge-neutral">—</span>
+            <div class="breakdown-toggle" data-id="campaign">
+              <button class="btog active" data-view="list" onclick="toggleBreakdownView('campaign','list')" title="Lista"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
+              <button class="btog" data-view="pie" onclick="toggleBreakdownView('campaign','pie')" title="Pizza"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></button>
+            </div>
+          </div>
+        </div>
+        <div id="leads-campaign-list" style="overflow-x:auto;">
+          <table class="data-table w-full">
+            <thead><tr>
+              <th style="min-width:140px;text-align:left;">Campanha (Campaign)</th>
+              <th style="text-align:right;width:60px;">Leads</th>
+              <th style="text-align:right;width:52px;">%</th>
+            </tr></thead>
+            <tbody id="leads-campaign-tbody">
+              <tr><td colspan="3" class="py-6 text-center text-slate-500 text-sm">Carregando…</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="leads-campaign-pie" style="display:none;padding:12px 16px 16px;"><canvas id="chart-bd-campaign" height="220"></canvas></div>
+      </div>
+
+      <!-- 4. Por Conjunto (Medium) -->
+      <div class="card overflow-hidden">
+        <div class="px-5 py-3.5 border-b flex items-center justify-between" style="border-color:#1e1e2a;">
+          <h2 class="text-sm font-semibold text-slate-200">Por Conjunto</h2>
+          <div class="flex items-center gap-2">
+            <span id="leads-conjunto-count" class="badge badge-neutral">—</span>
+            <div class="breakdown-toggle" data-id="conjunto">
+              <button class="btog active" data-view="list" onclick="toggleBreakdownView('conjunto','list')" title="Lista"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
+              <button class="btog" data-view="pie" onclick="toggleBreakdownView('conjunto','pie')" title="Pizza"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></button>
+            </div>
+          </div>
+        </div>
+        <div id="leads-conjunto-list" style="overflow-x:auto;">
+          <table class="data-table w-full">
+            <thead><tr>
+              <th style="min-width:140px;text-align:left;">Conjunto (Medium)</th>
+              <th style="text-align:right;width:60px;">Leads</th>
+              <th style="text-align:right;width:52px;">%</th>
+            </tr></thead>
+            <tbody id="leads-conjunto-tbody">
+              <tr><td colspan="3" class="py-6 text-center text-slate-500 text-sm">Carregando…</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="leads-conjunto-pie" style="display:none;padding:12px 16px 16px;"><canvas id="chart-bd-conjunto" height="220"></canvas></div>
+      </div>
+
+      <!-- 5. Por Anúncio (Content) -->
+      <div class="card overflow-hidden">
+        <div class="px-5 py-3.5 border-b flex items-center justify-between" style="border-color:#1e1e2a;">
+          <h2 class="text-sm font-semibold text-slate-200">Por Anúncio</h2>
+          <div class="flex items-center gap-2">
+            <span id="leads-anuncio-count" class="badge badge-neutral">—</span>
+            <div class="breakdown-toggle" data-id="anuncio">
+              <button class="btog active" data-view="list" onclick="toggleBreakdownView('anuncio','list')" title="Lista"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
+              <button class="btog" data-view="pie" onclick="toggleBreakdownView('anuncio','pie')" title="Pizza"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></button>
+            </div>
+          </div>
+        </div>
+        <div id="leads-anuncio-list" style="overflow-x:auto;">
+          <table class="data-table w-full">
+            <thead><tr>
+              <th style="min-width:140px;text-align:left;">Anúncio (Content)</th>
+              <th style="text-align:right;width:60px;">Leads</th>
+              <th style="text-align:right;width:52px;">%</th>
+            </tr></thead>
+            <tbody id="leads-anuncio-tbody">
+              <tr><td colspan="3" class="py-6 text-center text-slate-500 text-sm">Carregando…</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="leads-anuncio-pie" style="display:none;padding:12px 16px 16px;"><canvas id="chart-bd-anuncio" height="220"></canvas></div>
+      </div>
+
+      <!-- 6. Por Posicionamento (Term) -->
+      <div class="card overflow-hidden">
+        <div class="px-5 py-3.5 border-b flex items-center justify-between" style="border-color:#1e1e2a;">
+          <h2 class="text-sm font-semibold text-slate-200">Por Posicionamento</h2>
+          <div class="flex items-center gap-2">
+            <span id="leads-term-count" class="badge badge-neutral">—</span>
+            <div class="breakdown-toggle" data-id="term">
+              <button class="btog active" data-view="list" onclick="toggleBreakdownView('term','list')" title="Lista"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
+              <button class="btog" data-view="pie" onclick="toggleBreakdownView('term','pie')" title="Pizza"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></button>
+            </div>
+          </div>
+        </div>
+        <div id="leads-term-list" style="overflow-x:auto;">
+          <table class="data-table w-full">
+            <thead><tr>
+              <th style="min-width:140px;text-align:left;">Posicionamento (Term)</th>
+              <th style="text-align:right;width:60px;">Leads</th>
+              <th style="text-align:right;width:52px;">%</th>
+            </tr></thead>
+            <tbody id="leads-term-tbody">
+              <tr><td colspan="3" class="py-6 text-center text-slate-500 text-sm">Carregando…</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="leads-term-pie" style="display:none;padding:12px 16px 16px;"><canvas id="chart-bd-term" height="220"></canvas></div>
+      </div>
+
+    </div>
+
+    <!-- ── Tabela detalhada ── -->
+    <div class="card overflow-hidden">
+      <div class="flex items-center justify-between px-5 py-3.5 border-b" style="border-color:#1e1e2a;">
+        <h2 class="text-sm font-semibold text-slate-200">Leads Detalhados</h2>
+        <div class="flex items-center gap-2">
+          <span id="leads-detail-count" class="badge badge-neutral">— leads</span>
+          <button onclick="exportLeadsCSV()" class="date-btn text-xs flex items-center gap-1.5">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            CSV
+          </button>
+        </div>
+      </div>
+      <div class="table-scroll-wrap">
+        <table class="data-table w-full">
+          <thead>
+            <tr>
+              <th style="text-align:left;min-width:100px;">Data</th>
+              <th style="text-align:left;min-width:110px;">Origem</th>
+              <th style="text-align:left;min-width:190px;">E-mail</th>
+              <th style="text-align:left;min-width:90px;">Source</th>
+              <th style="text-align:left;min-width:160px;">Campaign</th>
+              <th style="text-align:left;min-width:90px;">Medium</th>
+              <th style="text-align:left;min-width:160px;">Content</th>
+              <th style="text-align:left;min-width:120px;">Term</th>
+            </tr>
+          </thead>
+          <tbody id="leads-detail-tbody">
+            <tr><td colspan="8" class="py-8 text-center text-slate-500 text-sm">Carregando leads…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <!-- Paginação -->
+      <div id="leads-pagination" class="flex items-center justify-between px-5 py-3 border-t" style="border-color:#1e1e2a;display:none!important;">
+        <span id="leads-page-info" class="text-xs text-slate-500"></span>
+        <div id="leads-page-btns" class="flex items-center gap-1"></div>
+      </div>
+    </div>
+
+  </section>
+
+
+  <!-- ── Footer ── -->
+  <div class="mt-8 flex items-center justify-between text-xs text-slate-700">
+    <span>NOME_DO_CLIENTE — Meta Ads Dashboard</span>
+    <span id="last-updated">—</span>
+  </div>
+
+</main>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════════════════ -->
+<script>
+/* ─────────────────────────────────────────────
+   IMPOSTO META ADS — 12,15%
+   Todas as métricas de custo são multiplicadas
+   por este fator antes de exibição
+───────────────────────────────────────────── */
+const TAX = 1.1215;
+const tx  = v => Number(v || 0) * TAX;
+const txR = v => Number(v || 0) / TAX;
+
+/* ─────────────────────────────────────────────
+   METRICS DEFINITION (chart + KPIs)
+───────────────────────────────────────────── */
+const METRICS_DEF = {
+  spend:       { label: 'Valor Gasto',     color: '#6366f1', axis: 'left',  fmt: fmtCurrency,   tickFmt: v => v>=1000 ? 'R$'+(v/1000).toFixed(1)+'k' : 'R$'+v.toFixed(0) },
+  cpm:         { label: 'CPM',             color: '#8b5cf6', axis: 'left',  fmt: fmtCurrency,   tickFmt: v => v>=1000 ? 'R$'+(v/1000).toFixed(1)+'k' : 'R$'+v.toFixed(1) },
+  ctr:         { label: 'CTR Link',        color: '#f59e0b', axis: 'right', fmt: fmtPercent,    tickFmt: v => v.toFixed(2)+'%' },
+  cpc:         { label: 'CPC Link',        color: '#ef4444', axis: 'left',  fmt: fmtCurrency,   tickFmt: v => 'R$'+v.toFixed(2) },
+  connectRate: { label: 'Connect Rate',    color: '#06b6d4', axis: 'right', fmt: fmtPercent,    tickFmt: v => v.toFixed(1)+'%' },
+  conversions: { label: 'Conversões',      color: '#10b981', axis: 'left',  fmt: fmtNumber,     tickFmt: v => v>=1000 ? (v/1000).toFixed(1)+'k' : String(Math.round(v)) },
+  convRate:    { label: 'Taxa de Conv.',   color: '#38bdf8', axis: 'right', fmt: fmtPercent,    tickFmt: v => v.toFixed(2)+'%' },
+  cpa:         { label: 'Custo/Conv.',     color: '#f97316', axis: 'left',  fmt: fmtCurrency,   tickFmt: v => 'R$'+v.toFixed(2) },
+  roas:        { label: 'ROAS',            color: '#e879f9', axis: 'left',  fmt: fmtMultiplier, tickFmt: v => v.toFixed(2)+'x' },
+};
+
+/* ─────────────────────────────────────────────
+   STATE
+───────────────────────────────────────────── */
+let state = {
+  datePreset:       'this_month',
+  dateSince:        null,
+  dateUntil:        null,
+  campaigns:        [],
+  sortKey:          'spend',
+  sortAsc:          false,
+  currency:         'BRL',
+  chartLine:        null,
+  chartDonut:       null,
+  chartBar:         null,
+  chartBarAdsets:   null,
+  chartMetrics:     new Set(['spend']),
+  _dailyRows:       null,
+  _leadsRows:       [],
+  _leadsPage:       1,
+  activeSection:    'overview',
+  adsetLoaded:      false,
+  adsLoaded:        false,
+  diagLoaded:       false,
+  _adsets:          [],
+  _ads:             [],
+  filterOnlySpend:   true,
+  filterOnlyActive:  false,
+  funnelMode:       'leads',
+  _overviewRaw:     null,
+  funnelLoaded:     false,
+  leadsLoaded:      false,
+  _leadsRaw:        null,
+  chartLeads:       null,
+  _adLinks:         {},   // ad_name → { ig, fb } — populado junto com loadLeads
+};
+
+/* ─────────────────────────────────────────────
+   HELPERS
+───────────────────────────────────────────── */
+const $ = id => document.getElementById(id);
+
+function toggleSidebar() {
+  const sb = $('sidebar'), ov = $('sidebar-overlay');
+  const isOpen = sb.classList.toggle('open');
+  ov.classList.toggle('open', isOpen);
+}
+function closeSidebar() {
+  $('sidebar').classList.remove('open');
+  $('sidebar-overlay').classList.remove('open');
+}
+
+
+const _numFmt  = new Intl.NumberFormat('pt-BR');
+const _curFmts = {};  // cache por moeda
+
+// Formatter compacto para KPI cards: sem centavos ≥ 1.000, K ≥ 100.000, M ≥ 1M
+function fmtKpiCurrency(val, currency) {
+  if (val == null || isNaN(val)) return '—';
+  const n = Number(val);
+  const cur = currency || state.currency || 'BRL';
+  const sym = cur === 'BRL' ? 'R$' : cur;
+  if (n >= 1_000_000) return `${sym} ${(n/1_000_000).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})}M`;
+  if (n >= 100_000)   return `${sym} ${Math.round(n/1_000).toLocaleString('pt-BR')}K`;
+  if (n >= 1_000)     return new Intl.NumberFormat('pt-BR',{style:'currency',currency:cur,minimumFractionDigits:0,maximumFractionDigits:0}).format(n);
+  return fmtCurrency(val, currency);
+}
+
+function fmtCurrency(val, currency) {
+  if (val == null || isNaN(val)) return '—';
+  const cur = currency || state.currency || 'BRL';
+  if (!_curFmts[cur]) {
+    _curFmts[cur] = new Intl.NumberFormat('pt-BR', {
+      style: 'currency', currency: cur,
+      minimumFractionDigits: 2, maximumFractionDigits: 2,
+    });
+  }
+  return _curFmts[cur].format(Number(val));
+}
+
+function fmtNumber(val) {
+  if (val == null || isNaN(val)) return '—';
+  return _numFmt.format(Math.round(Number(val)));
+}
+
+function fmtPercent(val) {
+  if (val == null || isNaN(val)) return '—';
+  return Number(val).toFixed(2) + '%';
+}
+
+function fmtMultiplier(val) {
+  if (val == null || isNaN(val)) return '—';
+  return Number(val).toFixed(2) + 'x';
+}
+
+function fmtDate(d) {
+  return new Date(d + 'T12:00:00').toLocaleDateString('pt-BR', { day:'2-digit', month:'short' });
+}
+
+/* Extract action value — EXACT match only (sem includes para evitar dupla contagem) */
+function exactAction(actions = [], type) {
+  if (!Array.isArray(actions)) return 0;
+  return actions
+    .filter(a => a.action_type === type)
+    .reduce((acc, a) => acc + Number(a.value || 0), 0);
+}
+
+/* sumAction com includes — usado apenas para ROAS/revenue onde variações são intencionais */
+function sumAction(actions = [], type) {
+  if (!Array.isArray(actions)) return 0;
+  return actions
+    .filter(a => a.action_type === type || a.action_type?.includes(type))
+    .reduce((acc, a) => acc + Number(a.value || 0), 0);
+}
+
+/* Link clicks — a única métrica de clique usada no dash */
+function getLinkClicks(actions = []) {
+  return exactAction(actions, 'link_click');
+}
+
+/* Compute ROAS: purchase_roas or revenue / spend */
+function calcRoas(data) {
+  if (data.purchase_roas && Array.isArray(data.purchase_roas) && data.purchase_roas.length) {
+    return Number(data.purchase_roas[0].value);
+  }
+  const rev = sumAction(data.action_values, 'purchase');
+  const spend = Number(data.spend || 0);
+  if (spend > 0 && rev > 0) return rev / spend;
+  return null;
+}
+
+/* Compute conversions — exact match, sem includes, sem dupla contagem */
+function calcConversions(data) {
+  const actions = data.actions || [];
+  return (
+    exactAction(actions, 'purchase') +
+    exactAction(actions, 'omni_purchase') +
+    exactAction(actions, 'lead') +
+    exactAction(actions, 'complete_registration') +
+    exactAction(actions, 'contact') +
+    exactAction(actions, 'submit_application')
+  ) || 0;
+}
+
+/* Build query string for date */
+function dateParams() {
+  if (state.dateSince && state.dateUntil) {
+    return `since=${state.dateSince}&until=${state.dateUntil}`;
+  }
+  return `date_preset=${state.datePreset}`;
+}
+
+/* Clear skeleton from element */
+function unSkeleton(el) {
+  if (el) { el.classList.remove('skeleton'); el.style.minHeight = ''; }
+}
+
+/* Spinning refresh icon */
+function setRefreshing(on) {
+  const icon = $('icon-refresh');
+  if (!icon) return;
+  icon.style.animation = on ? 'spin 1s linear infinite' : '';
+}
+
+
+/* ─────────────────────────────────────────────
+   API CALLS
+───────────────────────────────────────────── */
+async function apiFetch(type, extra = '', overrideSince = null, overrideUntil = null) {
+  const dp = (overrideSince && overrideUntil)
+    ? `since=${overrideSince}&until=${overrideUntil}`
+    : dateParams();
+  const url = `/api/meta?type=${type}&${dp}${extra ? '&' + extra : ''}`;
+  const res = await fetch(url);
+  const json = await res.json();
+  if (json.error) throw new Error(json.error.message || json.error);
+  return json;
+}
+
+
+/* ─────────────────────────────────────────────
+   LOAD ACCOUNT INFO
+───────────────────────────────────────────── */
+async function loadAccount() {
+  try {
+    const data = await apiFetch('account');
+    const name = data.name || 'Conta Meta';
+    const currency = data.currency || 'BRL';
+    const tz = data.timezone_name || '';
+    state.currency = currency;
+    $('account-name').textContent = name;
+    $('account-currency').textContent = `${currency}${tz ? ' · ' + tz.replace('America/', '').replace('_', ' ') : ''}`;
+  } catch (e) {
+    $('account-name').textContent = 'Conta conectada';
+    console.warn('account fetch:', e.message);
+  }
+}
+
+
+/* ─────────────────────────────────────────────
+   LOAD OVERVIEW KPIs
+───────────────────────────────────────────── */
+async function loadOverview() {
+  try {
+    const json = await apiFetch('overview');
+    const d = json.data?.[0] || {};
+    state._overviewRaw = d; // usado pelo funil
+
+    const impressions = Number(d.impressions || 0);
+    const spend       = tx(d.spend);            // custo real c/ imposto
+    const cpm         = tx(d.cpm);              // CPM real c/ imposto
+    const clicks      = getLinkClicks(d.actions || []);
+    const lpv         = exactAction(d.actions || [], 'landing_page_view');
+    const conversions = calcConversions(d);
+
+    const ctr         = impressions > 0 ? (clicks / impressions) * 100 : 0;
+    const cpc         = clicks > 0 ? spend / clicks : 0;
+    const connectRate = clicks > 0 ? (lpv / clicks) * 100 : 0;
+    const convRate    = lpv    > 0 ? (conversions / lpv)    * 100 : 0;
+    const cpa         = conversions > 0 ? spend / conversions : 0;
+    const roasRaw     = calcRoas(d);
+    const roas        = roasRaw != null ? roasRaw / TAX : null;
+
+    setKpi('spend',        fmtKpiCurrency(spend));
+    setKpi('cpm',          fmtKpiCurrency(cpm));
+    setKpi('ctr',          fmtPercent(ctr));
+    setKpi('cpc',          fmtKpiCurrency(cpc));
+    setKpi('connect-rate', fmtPercent(connectRate));
+    setKpi('conversions',  fmtNumber(conversions));
+    setKpi('conv-rate',    fmtPercent(convRate));
+    setKpi('cpa',          conversions > 0 ? fmtKpiCurrency(cpa) : '—');
+    setKpi('roas',         roas != null ? fmtMultiplier(roas) : '—');
+
+    // Sub-labels: zerados — preenchidos pelo loadOverviewComparison
+    ['spend','cpm','ctr','cpc','connect-rate','conversions','conv-rate','cpa','roas']
+      .forEach(k => setText(`kpi-${k}-sub`, ''));
+
+    // Dispara comparação com período anterior em background
+    loadOverviewComparison({ spend, cpm, ctr, cpc, connectRate, conversions, convRate, cpa, roas });
+
+  } catch(e) {
+    console.error('Overview error:', e.message);
+    ['spend','cpm','ctr','cpc','connect-rate','conversions','conv-rate','cpa','roas'].forEach(k => setKpi(k,'Erro'));
+  }
+}
+
+function setKpi(key, val) {
+  const el = $(`kpi-${key}`);
+  if (!el) return;
+  unSkeleton(el);
+  el.textContent = val;
+}
+function setText(id, val) {
+  const el = $(id);
+  if (el) el.textContent = val;
+}
+
+
+/* ─────────────────────────────────────────────
+   COMPARAÇÃO COM PERÍODO ANTERIOR
+───────────────────────────────────────────── */
+
+// Formata intervalo de datas em PT-BR: "1–16 de mai" ou "15 de abr a 1 de mai"
+function fmtDateRangePT(since, until) {
+  const M = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  const s = new Date(since + 'T12:00:00');
+  const u = new Date(until + 'T12:00:00');
+  const sd = s.getDate(), sm = M[s.getMonth()];
+  const ud = u.getDate(), um = M[u.getMonth()];
+  if (sm === um) return `${sd}–${ud} de ${um}`;
+  return `${sd} de ${sm} a ${ud} de ${um}`;
+}
+
+// Calcula o período atual em datas reais e o período anterior (mesmo nº de dias, imediatamente antes)
+function getPreviousPeriodDates() {
+  const fmt = d => d.toISOString().slice(0, 10);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const preset = state.datePreset;
+  const since  = state.dateSince;
+  const until  = state.dateUntil;
+
+  let currSince, currUntil;
+
+  if (since && until) {
+    currSince = new Date(since + 'T12:00:00');
+    currUntil = new Date(until + 'T12:00:00');
+  } else {
+    const daysMap = { last_7d: 7, last_14d: 14, last_30d: 30, last_90d: 90 };
+    if (preset === 'today') {
+      currSince = new Date(today); currUntil = new Date(today);
+    } else if (preset === 'yesterday') {
+      currSince = new Date(today); currSince.setDate(today.getDate() - 1);
+      currUntil = new Date(currSince);
+    } else if (daysMap[preset]) {
+      const n = daysMap[preset];
+      currSince = new Date(today); currSince.setDate(today.getDate() - n);
+      currUntil = new Date(today); currUntil.setDate(today.getDate() - 1);
+    } else if (preset === 'this_month') {
+      currSince = new Date(today.getFullYear(), today.getMonth(), 1);
+      currUntil = new Date(today);
+    } else if (preset === 'last_month') {
+      currSince = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      currUntil = new Date(today.getFullYear(), today.getMonth(), 0);
+    } else {
+      return null;
+    }
+  }
+
+  // Período anterior: mesma duração, imediatamente antes do início do período atual
+  const dur = Math.round((currUntil - currSince) / 86400000) + 1;
+  const prevUntil = new Date(currSince); prevUntil.setDate(prevUntil.getDate() - 1);
+  const prevSince = new Date(prevUntil); prevSince.setDate(prevSince.getDate() - dur + 1);
+
+  return {
+    since:     fmt(prevSince),
+    until:     fmt(prevUntil),
+    currSince: fmt(currSince),
+    currUntil: fmt(currUntil),
+  };
+}
+
+// Renderiza delta + valor anterior no card de KPI
+function renderDelta(key, current, previous, direction = 'up', fmtFn = null) {
+  const deltaEl = document.getElementById(`kpi-${key}-delta`);
+  const subEl   = document.getElementById(`kpi-${key}-sub`);
+  if (!deltaEl) return;
+
+  // Sub-label: mostra valor do período anterior
+  if (subEl && fmtFn && previous != null && previous !== 0) {
+    subEl.textContent = `ant. ${fmtFn(previous)}`;
+    subEl.style.color = '#475569';
+  }
+
+  if (!previous || previous === 0) { deltaEl.style.display = 'none'; return; }
+
+  const pct  = ((current - previous) / Math.abs(previous)) * 100;
+  const abs  = Math.abs(pct);
+  const flat = abs < 0.5;
+  const arrow = flat ? '→' : (pct > 0 ? '▲' : '▼');
+
+  let cls;
+  if (flat || direction === 'neutral') cls = 'trend-flat';
+  else if (direction === 'up')  cls = pct > 0 ? 'trend-up' : 'trend-down';
+  else                          cls = pct < 0 ? 'trend-up' : 'trend-down'; // custo: cair = bom
+
+  deltaEl.textContent = `${arrow} ${abs < 10 ? abs.toFixed(1) : Math.round(abs)}%`;
+  deltaEl.className   = `text-xs font-semibold ${cls}`;
+  deltaEl.style.display = '';
+}
+
+// Busca dados do período anterior e atualiza deltas + indicador de período
+async function loadOverviewComparison(cur) {
+  const prev = getPreviousPeriodDates();
+  if (!prev) return;
+
+  // Mostra indicador de período imediatamente
+  const currLabel = fmtDateRangePT(prev.currSince, prev.currUntil);
+  const prevLabel = fmtDateRangePT(prev.since, prev.until);
+  const indEl  = document.getElementById('period-indicator');
+  const indTxt = document.getElementById('period-indicator-text');
+  if (indEl && indTxt) {
+    indTxt.textContent = `Período: ${currLabel}  ·  comparado com ${prevLabel}`;
+    indEl.style.display = 'flex';
+  }
+
+  try {
+    const json = await apiFetch('overview', '', prev.since, prev.until);
+    const d = json.data?.[0];
+    if (!d) return;
+
+    const pSpend       = tx(d.spend);
+    const pCpm         = tx(d.cpm);
+    const pImpr        = Number(d.impressions || 0);
+    const pClicks      = getLinkClicks(d.actions || []);
+    const pLpv         = exactAction(d.actions || [], 'landing_page_view');
+    const pConv        = calcConversions(d);
+    const pCtr         = pImpr   > 0 ? (pClicks / pImpr)  * 100 : 0;
+    const pCpc         = pClicks > 0 ? pSpend / pClicks        : 0;
+    const pConnRate    = pClicks > 0 ? (pLpv / pClicks)   * 100 : 0;
+    const pConvRate    = pLpv   > 0 ? (pConv / pLpv)     * 100 : 0;
+    const pCpa         = pConv   > 0 ? pSpend / pConv          : 0;
+    const pRev         = Number((d.action_values || []).find(a => a.action_type === 'purchase')?.value || 0);
+    const pRoas        = pSpend  > 0 ? (pRev / pSpend) / TAX   : null;
+
+    renderDelta('spend',        cur.spend,        pSpend,     'neutral', fmtCurrency);
+    renderDelta('cpm',          cur.cpm,          pCpm,       'down',    fmtCurrency);
+    renderDelta('ctr',          cur.ctr,          pCtr,       'up',      fmtPercent);
+    renderDelta('cpc',          cur.cpc,          pCpc,       'down',    fmtCurrency);
+    renderDelta('connect-rate', cur.connectRate,  pConnRate,  'up',      fmtPercent);
+    renderDelta('conversions',  cur.conversions,  pConv,      'up',      fmtNumber);
+    renderDelta('conv-rate',    cur.convRate,     pConvRate,  'up',      fmtPercent);
+    if (cur.cpa > 0 && pCpa > 0) renderDelta('cpa', cur.cpa, pCpa, 'down', fmtCurrency);
+    if (cur.roas != null && pRoas != null) renderDelta('roas', cur.roas, pRoas, 'up', fmtMultiplier);
+
+  } catch(e) {
+    console.warn('Comparison fetch failed:', e.message);
+  }
+}
+
+
+
+/* ─────────────────────────────────────────────
+   DAILY CHART — multi-metric
+───────────────────────────────────────────── */
+
+// Calcula todas as métricas por linha diária
+function calcDailyMetrics(r) {
+  const spend       = tx(r.spend);
+  const cpm         = tx(r.cpm);
+  const impr        = Number(r.impressions || 0);
+  const clicks      = getLinkClicks(r.actions || []);
+  const lpv         = exactAction(r.actions || [], 'landing_page_view');
+  const convs       = calcConversions(r);
+  const rev         = Number((r.action_values || []).find(a => a.action_type === 'purchase')?.value || 0);
+  return {
+    spend,
+    cpm,
+    ctr:         impr   > 0 ? (clicks / impr)  * 100 : 0,
+    cpc:         clicks > 0 ? spend / clicks         : 0,
+    connectRate: clicks > 0 ? (lpv / clicks)   * 100 : 0,
+    conversions: convs,
+    convRate:    clicks > 0 ? (convs / clicks)  * 100 : 0,
+    cpa:         convs  > 0 ? spend / convs          : 0,
+    roas:        spend  > 0 ? rev / spend            : 0,
+  };
+}
+
+// Renderiza / atualiza o gráfico com as métricas ativas
+function renderDailyChart() {
+  const rows = state._dailyRows;
+  if (!rows || !rows.length) return;
+
+  const labels  = rows.map(r => r.date_start);
+  const metrics = [...state.chartMetrics];
+  const daily   = rows.map(r => calcDailyMetrics(r));
+
+  // Determina quais eixos são necessários
+  const hasLeft  = metrics.some(k => METRICS_DEF[k].axis === 'left');
+  const hasRight = metrics.some(k => METRICS_DEF[k].axis === 'right');
+
+  const datasets = metrics.map(key => {
+    const def  = METRICS_DEF[key];
+    const data = daily.map(d => d[key] ?? 0);
+    const hex  = def.color;
+    return {
+      label:               def.label,
+      metricKey:           key,
+      data,
+      borderColor:         hex,
+      backgroundColor:     hex + '18',
+      borderWidth:         2,
+      pointRadius:         rows.length > 60 ? 0 : 3,
+      pointHoverRadius:    5,
+      pointBackgroundColor: hex,
+      fill:                metrics.length === 1,
+      tension:             0.4,
+      yAxisID:             def.axis === 'right' ? 'yRight' : 'yLeft',
+    };
+  });
+
+  const canvas = $('chart-line');
+  if (state.chartLine) state.chartLine.destroy();
+
+  state.chartLine = new Chart(canvas, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#18181f',
+          borderColor: '#2e2e40',
+          borderWidth: 1,
+          titleColor: '#94a3b8',
+          bodyColor: '#e2e8f0',
+          padding: 10,
+          callbacks: {
+            title: ctx => fmtDate(ctx[0].label),
+            label: ctx => {
+              const key = ctx.dataset.metricKey;
+              const def = METRICS_DEF[key];
+              return `  ${def.label}: ${def.fmt(ctx.parsed.y)}`;
+            },
+          },
+        },
+      },
+      scales: {
+        x: {
+          ticks: { color: '#475569', font: { size: 11, family: 'Fira Code' }, maxTicksLimit: 10 },
+          grid:  { color: '#1e1e2a' },
+          border: { color: '#1e1e2a' },
+        },
+        yLeft: {
+          display:  hasLeft,
+          position: 'left',
+          ticks: {
+            color: '#475569',
+            font:  { size: 11, family: 'Fira Code' },
+            callback: v => v >= 1000 ? (v/1000).toFixed(1)+'k' : (v % 1 === 0 ? v : v.toFixed(2)),
+          },
+          grid:   { color: '#1a1a24' },
+          border: { color: '#1e1e2a' },
+        },
+        yRight: {
+          display:  hasRight,
+          position: 'right',
+          ticks: {
+            color: '#475569',
+            font:  { size: 11, family: 'Fira Code' },
+            callback: v => v.toFixed(1) + '%',
+          },
+          grid:   { drawOnChartArea: false },
+          border: { color: '#1e1e2a' },
+        },
+      },
+    },
+  });
+}
+
+// Toggle de métrica no gráfico
+function toggleChartMetric(key) {
+  if (state.chartMetrics.has(key)) {
+    if (state.chartMetrics.size > 1) state.chartMetrics.delete(key);
+  } else {
+    state.chartMetrics.add(key);
+  }
+  syncToggleButtons();
+  renderDailyChart();
+}
+
+// Sincroniza visual dos botões com o estado
+function syncToggleButtons() {
+  document.querySelectorAll('.metric-toggle').forEach(btn => {
+    const key = btn.dataset.metric;
+    const def = METRICS_DEF[key];
+    const on  = state.chartMetrics.has(key);
+    btn.style.background   = on ? def.color + '22' : '#18181f';
+    btn.style.color        = on ? def.color : '#64748b';
+    btn.style.borderColor  = on ? def.color + '70' : '#2e2e40';
+  });
+}
+
+// Cria os botões de toggle no DOM
+function initChartToggles() {
+  const wrap = $('chart-metric-toggles');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  Object.entries(METRICS_DEF).forEach(([key, def]) => {
+    const btn = document.createElement('button');
+    btn.className    = 'metric-toggle';
+    btn.dataset.metric = key;
+    btn.textContent  = def.label;
+    btn.onclick      = () => toggleChartMetric(key);
+    wrap.appendChild(btn);
+  });
+  syncToggleButtons();
+}
+
+async function loadDailyChart() {
+  try {
+    const json = await apiFetch('daily');
+    state._dailyRows = json.data || [];
+
+    $('chart-line-skeleton').style.display = 'none';
+    const canvas = $('chart-line');
+    canvas.style.display = 'block';
+
+    initChartToggles();
+    renderDailyChart();
+  } catch(e) {
+    console.error('Daily chart error:', e.message);
+    $('chart-line-skeleton').textContent = 'Erro ao carregar gráfico';
+  }
+}
+
+
+/* ─────────────────────────────────────────────
+   LOAD CAMPAIGNS
+───────────────────────────────────────────── */
+async function loadCampaigns() {
+  try {
+    const json = await apiFetch('campaigns');
+    const rows = json.data || [];
+
+    // Enrich each campaign
+    state.campaigns = rows.map(r => {
+      const spend       = tx(r.spend);
+      const cpm         = tx(r.cpm);
+      const impr        = Number(r.impressions || 0);
+      const clicks      = getLinkClicks(r.actions || []);
+      const lpv         = exactAction(r.actions || [], 'landing_page_view');
+      const conversions = calcConversions(r);
+      const ctr         = impr    > 0 ? (clicks / impr)       * 100 : 0;
+      const cpc         = clicks  > 0 ? spend / clicks              : 0;
+      const connectRate = clicks  > 0 ? (lpv / clicks)        * 100 : 0;
+      const convRate    = lpv     > 0 ? (conversions / lpv)   * 100 : 0;
+      const cpa         = conversions > 0 ? spend / conversions     : 0;
+      const roasRaw     = calcRoas(r);
+      return {
+        campaign_name:  r.campaign_name || '—',
+        campaign_id:    r.campaign_id   || '',
+        objective:      r.objective     || '—',
+        status:         r.status        || '—',
+        impressions:    impr,
+        spend, cpm, ctr, cpc, connectRate, convRate, cpa,
+        conversions,
+        roas:           roasRaw != null ? roasRaw / TAX : null,
+        actions:        r.actions       || [],
+        action_values:  r.action_values || [],
+        spend_raw:      Number(r.spend  || 0),
+      };
+    });
+
+    renderCampaignsTable();
+    renderDonutChart();
+    renderBarChart();
+
+    $('campaigns-count').textContent = `${rows.length} campanha${rows.length !== 1 ? 's' : ''}`;
+  } catch(e) {
+    console.error('Campaigns error:', e.message);
+    $('campaigns-tbody').innerHTML = `<tr><td colspan="10" class="py-8 text-center text-red-400 text-sm">Erro: ${e.message}</td></tr>`;
+  }
+}
+
+
+/* ─────────────────────────────────────────────
+   SORT SYSTEM GENÉRICO
+───────────────────────────────────────────── */
+const sortState = {
+  campaigns: { key: 'spend', asc: false },
+  adsets:    { key: 'spend', asc: false },
+  ads:       { key: 'spend', asc: false },
+};
+
+function sortBy(table, key) {
+  const s = sortState[table];
+  if (s.key === key) s.asc = !s.asc;
+  else { s.key = key; s.asc = false; }
+  if (table === 'campaigns') renderCampaignsTable();
+  if (table === 'adsets')    renderAdSetsTable();
+  if (table === 'ads')       renderAdsTable();
+}
+
+// Ícones de ordenação
+function sortIcon(table, key) {
+  const s = sortState[table];
+  if (s.key !== key) return `<span style="opacity:.3;margin-left:3px;">↕</span>`;
+  return s.asc
+    ? `<span style="color:#818cf8;margin-left:3px;">↑</span>`
+    : `<span style="color:#818cf8;margin-left:3px;">↓</span>`;
+}
+
+function sortData(arr, table) {
+  const { key, asc } = sortState[table];
+  return [...arr].sort((a, b) => {
+    let va = a[key], vb = b[key];
+    if (typeof va === 'string') va = va.toLowerCase();
+    if (typeof vb === 'string') vb = vb.toLowerCase();
+    if (va == null) return 1;
+    if (vb == null) return -1;
+    return asc ? (va > vb ? 1 : -1) : (va < vb ? 1 : -1);
+  });
+}
+
+// Atualiza ícones nos headers após ordenar
+function refreshSortIcons(table, keys) {
+  keys.forEach(k => {
+    const el = $(`th-${table}-${k}`);
+    if (!el) return;
+    const base = el.dataset.label || el.textContent.replace(/[↕↑↓]/g,'').trim();
+    el.dataset.label = base;
+    el.innerHTML = `${base} ${sortIcon(table, k)}`;
+  });
+}
+
+// Mantém compat com chamadas antigas
+function sortTable(key) { sortBy('campaigns', key); }
+
+/* ─── Toggle filtro "com gasto" ── */
+function toggleFilterSpend() {
+  state.filterOnlySpend = !state.filterOnlySpend;
+  const on = state.filterOnlySpend;
+  const styleOn  = 'background:#10b98120;border-color:#10b98140;color:#10b981;';
+  const styleOff = '';
+  ['btn-filter-spend','btn-filter-spend-adsets','btn-filter-spend-ads'].forEach(id => {
+    const el = $(id);
+    if (!el) return;
+    el.style.cssText = on ? styleOn : styleOff;
+    el.querySelector('svg') && (el.querySelector('svg').style.display = on ? '' : 'none');
+    // update label
+    const svg = el.querySelector('svg')?.outerHTML || '';
+    el.innerHTML = `${on ? svg : ''} ${on ? 'Com gasto' : 'Todos'}`.trim();
+    if (on) el.style.cssText = styleOn;
+  });
+  renderCampaignsTable();
+  if (state._adsets.length) renderAdSetsTable();
+  if (state._ads.length)    renderAdsTable();
+}
+
+function applySpendFilter(arr) {
+  if (!state.filterOnlySpend) return arr;
+  return arr.filter(r => Number(r.spend) > 0);
+}
+
+function toggleFilterActive() {
+  state.filterOnlyActive = !state.filterOnlyActive;
+  const on = state.filterOnlyActive;
+  const styleOn  = 'background:#10b98120;border-color:#10b98140;color:#10b981;';
+  const styleOff = '';
+  ['btn-filter-active','btn-filter-active-adsets','btn-filter-active-ads'].forEach(id => {
+    const el = $(id);
+    if (!el) return;
+    el.style.cssText = on ? styleOn : styleOff;
+    const svg = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="20 6 9 17 4 12"/></svg>`;
+    el.innerHTML = svg + ' Ativos';
+  });
+  renderCampaignsTable();
+  if (state._adsets.length) renderAdSetsTable();
+  if (state._ads.length)    renderAdsTable();
+}
+
+function applyActiveFilter(arr) {
+  if (!state.filterOnlyActive) return arr;
+  return arr.filter(r => r.status === 'ACTIVE');
+}
+
+function renderCampaignsTable() {
+  const data = applyActiveFilter(applySpendFilter(sortData(state.campaigns, 'campaigns')));
+  refreshSortIcons('campaigns', ['campaign_name','status','spend','cpm','ctr','cpc','connectRate','conversions','convRate','cpa','roas']);
+
+  if (!data.length) {
+    $('campaigns-tbody').innerHTML = `<tr><td colspan="11" class="py-8 text-center text-slate-500 text-sm">Nenhuma campanha encontrada no período.</td></tr>`;
+    return;
+  }
+
+  const statusBadge = s => {
+    const map = { ACTIVE:'badge-success', PAUSED:'badge-warn', DELETED:'badge-danger', ARCHIVED:'badge-neutral' };
+    const lbl = { ACTIVE:'Ativa', PAUSED:'Pausada', DELETED:'Excluída', ARCHIVED:'Arquivada' };
+    return `<span class="badge ${map[s]||'badge-neutral'}">${lbl[s]||s}</span>`;
+  };
+  const roasColor = v => v == null ? '' : v >= 3 ? 'color:#10b981' : v >= 1 ? 'color:#f59e0b' : 'color:#ef4444';
+
+  $('campaigns-tbody').innerHTML = data.map(c => `
+    <tr>
+      <td>
+        <div class="font-medium text-slate-200 text-xs leading-tight">${escHtml(c.campaign_name)}</div>
+        <div class="text-slate-600 text-xs mt-0.5">${escHtml(c.objective)}</div>
+      </td>
+      <td>${statusBadge(c.status)}</td>
+      <td class="mono text-right text-slate-200">${fmtCurrency(c.spend)}</td>
+      <td class="mono text-right text-slate-400">${fmtCurrency(c.cpm)}</td>
+      <td class="mono text-right text-slate-400">${fmtPercent(c.ctr)}</td>
+      <td class="mono text-right text-slate-400">${fmtCurrency(c.cpc)}</td>
+      <td class="mono text-right text-slate-400">${c.connectRate > 0 ? fmtPercent(c.connectRate) : '—'}</td>
+      <td class="mono text-right text-slate-400">${c.conversions > 0 ? fmtNumber(c.conversions) : '—'}</td>
+      <td class="mono text-right text-slate-400">${c.convRate > 0 ? fmtPercent(c.convRate) : '—'}</td>
+      <td class="mono text-right text-slate-400">${c.cpa > 0 ? fmtCurrency(c.cpa) : '—'}</td>
+      <td class="mono text-right font-semibold" style="${roasColor(c.roas)}">${c.roas != null ? fmtMultiplier(c.roas) : '—'}</td>
+    </tr>
+  `).join('');
+}
+
+function escHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+
+/* ─────────────────────────────────────────────
+   DONUT CHART
+───────────────────────────────────────────── */
+const PALETTE = ['#6366f1','#8b5cf6','#06b6d4','#10b981','#f59e0b','#f43763','#38bdf8','#84cc16','#ec4899','#14b8a6'];
+
+function renderDonutChart() {
+  const top = [...state.campaigns]
+    .sort((a,b) => b.spend - a.spend)
+    .slice(0, 8)
+    .filter(c => c.spend > 0);
+
+  $('chart-donut-skeleton').style.display = 'none';
+  const canvas = $('chart-donut');
+  canvas.style.display = 'block';
+
+  if (state.chartDonut) state.chartDonut.destroy();
+
+  state.chartDonut = new Chart(canvas, {
+    type: 'doughnut',
+    data: {
+      labels: top.map(c => c.campaign_name),
+      datasets: [{
+        data: top.map(c => c.spend),
+        backgroundColor: top.map((_, i) => PALETTE[i % PALETTE.length]),
+        borderColor: '#111118',
+        borderWidth: 2,
+        hoverBorderWidth: 3,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '68%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#18181f',
+          borderColor: '#2e2e40',
+          borderWidth: 1,
+          titleColor: '#94a3b8',
+          bodyColor: '#e2e8f0',
+          padding: 10,
+          callbacks: {
+            label: ctx => `  ${fmtCurrency(ctx.parsed)}`,
+          },
+        },
+      },
+    },
+  });
+
+  // Custom legend — nome truncado em 32 chars para não explodir o layout
+  const truncate = (s, n=32) => s.length > n ? s.slice(0,n)+'…' : s;
+  $('donut-legend').innerHTML = top.map((c, i) => `
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0;">
+      <div style="display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden;">
+        <span style="width:8px;height:8px;border-radius:50%;background:${PALETTE[i%PALETTE.length]};flex-shrink:0;"></span>
+        <span style="font-size:11px;color:#94a3b8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escHtml(c.campaign_name)}">${escHtml(truncate(c.campaign_name))}</span>
+      </div>
+      <span style="font-size:11px;font-family:'Fira Code',monospace;color:#cbd5e1;flex-shrink:0;white-space:nowrap;">${fmtCurrency(c.spend)}</span>
+    </div>
+  `).join('');
+}
+
+
+/* ─────────────────────────────────────────────
+   BAR CHART
+───────────────────────────────────────────── */
+function renderBarChart() {
+  const top = [...state.campaigns]
+    .sort((a,b) => b.spend - a.spend)
+    .slice(0, 10);
+
+  $('chart-bar-skeleton').style.display = 'none';
+  const canvas = $('chart-bar');
+  canvas.style.display = 'block';
+
+  if (state.chartBar) state.chartBar.destroy();
+
+  const labels = top.map(c => c.campaign_name.length > 20 ? c.campaign_name.slice(0,20)+'…' : c.campaign_name);
+
+  state.chartBar = new Chart(canvas, {
+    data: {
+      labels,
+      datasets: [
+        {
+          type: 'bar',
+          label: 'Gasto',
+          data: top.map(c => c.spend),
+          backgroundColor: 'rgba(99,102,241,0.75)',
+          hoverBackgroundColor: '#818cf8',
+          borderRadius: 5,
+          yAxisID: 'y',
+          order: 2,
+        },
+        {
+          type: 'bar',
+          label: 'Conv.',
+          data: top.map(c => c.conversions),
+          backgroundColor: 'rgba(16,185,129,0.65)',
+          hoverBackgroundColor: '#34d399',
+          borderRadius: 5,
+          yAxisID: 'y1',
+          order: 2,
+        },
+        {
+          type: 'line',
+          label: 'CPA',
+          data: top.map(c => c.cpa > 0 ? c.cpa : null),
+          borderColor: '#f59e0b',
+          backgroundColor: '#f59e0b33',
+          pointBackgroundColor: '#f59e0b',
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          borderWidth: 2,
+          tension: 0.3,
+          spanGaps: true,
+          yAxisID: 'y',
+          order: 1,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#18181f',
+          borderColor: '#2e2e40',
+          borderWidth: 1,
+          titleColor: '#94a3b8',
+          bodyColor: '#e2e8f0',
+          padding: 10,
+          callbacks: {
+            label: ctx => {
+              if (ctx.dataset.label === 'Gasto') return `  Gasto: ${fmtCurrency(ctx.parsed.y)}`;
+              if (ctx.dataset.label === 'Conv.')  return `  Conv.: ${fmtNumber(ctx.parsed.y)}`;
+              if (ctx.dataset.label === 'CPA')    return `  CPA: ${ctx.parsed.y != null ? fmtCurrency(ctx.parsed.y) : '—'}`;
+            },
+          },
+        },
+      },
+      scales: {
+        x: {
+          ticks: { color: '#475569', font: { size: 10.5, family: 'Fira Sans' }, maxRotation: 30 },
+          grid: { color: '#1e1e2a' },
+          border: { color: '#1e1e2a' },
+        },
+        y: {
+          position: 'left',
+          ticks: {
+            color: '#6366f1',
+            font: { size: 11, family: 'Fira Code' },
+            callback: v => 'R$' + (v >= 1000 ? (v/1000).toFixed(1)+'k' : v.toFixed(0)),
+          },
+          grid: { color: '#1a1a24' },
+          border: { color: '#1e1e2a' },
+        },
+        y1: {
+          position: 'right',
+          ticks: {
+            color: '#10b981',
+            font: { size: 11, family: 'Fira Code' },
+            callback: v => v >= 1000 ? (v/1000).toFixed(1)+'k' : Math.round(v),
+          },
+          grid: { drawOnChartArea: false },
+          border: { color: '#1e1e2a' },
+        },
+      },
+    },
+  });
+}
+
+
+/* ─────────────────────────────────────────────
+   EXPORT CSV
+───────────────────────────────────────────── */
+function exportCSV(type = 'campaigns') {
+  let headers, rows, filename;
+
+  if (type === 'campaigns') {
+    headers = ['Campanha','Status','Objetivo','Gasto','Impressões','Cliques','CTR','CPM','CPC','Conversões','ROAS'];
+    rows = state.campaigns.map(c => [
+      `"${c.campaign_name}"`, c.status, c.objective,
+      c.spend.toFixed(2), c.impressions, c.clicks,
+      Number(c.ctr).toFixed(2), Number(c.cpm).toFixed(2), Number(c.cpc).toFixed(2),
+      c.conversions, c.roas != null ? Number(c.roas).toFixed(2) : '',
+    ]);
+    filename = `meta-campanhas`;
+  } else if (type === 'adsets') {
+    if (!state._adsets?.length) { alert('Acesse "Conjuntos de Anúncios" primeiro para carregar os dados.'); return; }
+    headers = ['Conjunto','Campanha','Status','Gasto','Impressões','Cliques','CTR','CPM','CPC','Conversões'];
+    rows = state._adsets.map(r => [
+      `"${r.adset_name}"`, `"${r.campaign_name}"`, r.status,
+      r.spend.toFixed(2), r.impressions, r.clicks,
+      Number(r.ctr).toFixed(2), Number(r.cpm).toFixed(2), Number(r.cpc).toFixed(2), r.conversions,
+    ]);
+    filename = `meta-conjuntos`;
+  } else if (type === 'ads') {
+    if (!state._ads?.length) { alert('Acesse "Criativos" primeiro para carregar os dados.'); return; }
+    headers = ['Anúncio','Conjunto','Status','Gasto','Impressões','Cliques','CTR','CPC','Conversões'];
+    rows = state._ads.map(r => [
+      `"${r.ad_name}"`, `"${r.adset_name}"`, r.status,
+      r.spend.toFixed(2), r.impressions, r.clicks,
+      Number(r.ctr).toFixed(2), Number(r.cpc).toFixed(2), r.conversions,
+    ]);
+    filename = `meta-criativos`;
+  }
+
+  const csv = [headers.join(';'), ...rows.map(r => r.join(';'))].join('\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `${filename}-${new Date().toISOString().slice(0,10)}.csv`;
+  link.click();
+}
+
+
+/* ─────────────────────────────────────────────
+   NAVIGATION
+───────────────────────────────────────────── */
+/* ─────────────────────────────────────────────
+   FUNIL DE CONVERSÃO
+   Filtra campanhas por objetivo e agrega métricas
+───────────────────────────────────────────── */
+
+// Objetivos Meta por categoria
+const LEAD_OBJECTIVES  = ['LEAD_GENERATION','OUTCOME_LEADS'];
+const SALES_OBJECTIVES = ['CONVERSIONS','OUTCOME_SALES','PRODUCT_CATALOG_SALES','OUTCOME_ENGAGEMENT','VALUE'];
+
+function funnelObjLabel(obj) {
+  if (!obj || obj === '—') return '?';
+  if (LEAD_OBJECTIVES.some(o  => obj.includes(o))) return 'leads';
+  if (SALES_OBJECTIVES.some(o => obj.includes(o))) return 'vendas';
+  return obj.toLowerCase().replace(/_/g,' ');
+}
+
+function aggregateCampaigns(list) {
+  let impressions = 0, spend = 0;
+  const actionMap = {};
+
+  for (const c of list) {
+    impressions += c.impressions || 0;
+    spend       += c.spend       || 0; // já com imposto
+
+    for (const a of (c.actions || [])) {
+      const v = Number(a.value || 0);
+      actionMap[a.action_type] = (actionMap[a.action_type] || 0) + v;
+    }
+  }
+
+  // Exact match only — evita somar tipos errados (ex: 'leadgen_lead' junto com 'lead')
+  const ex = type => actionMap[type] || 0;
+
+  // Cliques no link apenas (não inclui curtidas, comentários, etc.)
+  const linkClicks = ex('link_click');
+  const lpv        = ex('landing_page_view');
+  // Leads: só 'lead' exato — não somar offsite_conversion.fb_pixel_lead
+  // pois o Meta reporta o mesmo lead nas duas actions (dupla contagem)
+  const leads      = ex('lead');
+  // Compras: purchase exato + omni
+  const purchase   = ex('purchase') || ex('omni_purchase');
+
+  const cpm = impressions > 0 ? (spend / impressions) * 1000 : 0;
+  const ctr = impressions > 0 ? (linkClicks / impressions) * 100 : 0;
+  const cpc = linkClicks  > 0 ? spend / linkClicks : 0;
+
+  return { impressions, clicks: linkClicks, spend, cpm, ctr, cpc, lpv, leads, purchase };
+}
+
+async function loadFunnel() {
+  // Funil precisa dos dados de campanhas (com objective + actions)
+  if (!state.campaigns.length) {
+    $('funnel-stages').innerHTML = `<p style="color:#475569;text-align:center;padding:40px 0;font-size:13px;">Carregando campanhas…</p>`;
+    // Aguarda que loadCampaigns (disparado no loadAll) termine
+    // Tenta por até 5s
+    let tries = 0;
+    while (!state.campaigns.length && tries < 10) {
+      await new Promise(r => setTimeout(r, 500));
+      tries++;
+    }
+  }
+  renderFunnel();
+}
+
+function setFunnelMode(mode) {
+  state.funnelMode = mode;
+  const btnL = $('funnel-btn-leads'), btnS = $('funnel-btn-sales');
+  btnL.style.cssText = mode === 'leads'
+    ? 'background:#6366f120;border-color:#6366f150;color:#818cf8;font-weight:600;'
+    : 'color:#64748b;';
+  btnS.style.cssText = mode === 'sales'
+    ? 'background:#f59e0b20;border-color:#f59e0b50;color:#fbbf24;font-weight:600;'
+    : 'color:#64748b;';
+  renderFunnel();
+}
+
+function renderFunnel() {
+  const all = state.campaigns;
+  if (!all.length) {
+    $('funnel-stages').innerHTML = `<p style="color:#475569;text-align:center;padding:40px 0;font-size:13px;">Nenhuma campanha carregada.</p>`;
+    return;
+  }
+
+  const isLeads    = state.funnelMode === 'leads';
+  const targetObjs = isLeads ? LEAD_OBJECTIVES : SALES_OBJECTIVES;
+  const filtered   = all.filter(c => targetObjs.some(o => (c.objective||'').toUpperCase().includes(o)));
+  const uniqueObjs = [...new Set(all.map(c => c.objective).filter(Boolean))];
+
+  if (!filtered.length) {
+    const objList = uniqueObjs.map(o =>
+      `<span style="display:inline-block;margin:3px;padding:2px 8px;border-radius:12px;background:#1e1e2a;border:1px solid #2e2e40;font-size:11px;color:#64748b;">${o}</span>`
+    ).join('');
+    $('funnel-stages').innerHTML = `
+      <div style="text-align:center;padding:40px 20px;">
+        <p style="color:#475569;font-size:13px;margin-bottom:8px;">Nenhuma campanha de <strong style="color:#94a3b8;">${isLeads ? 'Leads' : 'Vendas'}</strong> encontrada.</p>
+        <p style="color:#334155;font-size:11px;margin-bottom:10px;">Objetivos na conta:</p>
+        <div>${objList}</div>
+      </div>`;
+    $('funnel-summary-grid').innerHTML = '';
+    return;
+  }
+
+  const ag = aggregateCampaigns(filtered);
+  const { impressions, clicks, spend, cpm, ctr, cpc, lpv } = ag;
+  const convVal     = isLeads ? ag.leads : ag.purchase;
+  const convLabel   = isLeads ? 'Leads' : 'Vendas';
+  const convAccent  = isLeads ? '#818cf8' : '#fbbf24';
+  const costPerConv = convVal > 0 ? spend / convVal : null;
+
+  const rateClicks = impressions > 0 ? (clicks / impressions) * 100 : 0;
+  const rateLpv    = clicks > 0      ? (lpv    / clicks)      * 100 : 0;
+  const rateConv   = (lpv || clicks) > 0 ? (convVal / (lpv || clicks)) * 100 : 0;
+
+  // ── Cores do cone (escuro → claro de cima para baixo) ──
+  // Leads: púrpura/índigo  |  Vendas: âmbar/laranja
+  const coneColors = isLeads
+    ? ['#1e1b4b','#2e1065','#3730a3','#4338ca']
+    : ['#431407','#7c2d12','#9a3412','#c2410c'];
+  const convCardBg  = isLeads ? '#312e81' : '#92400e';
+  const convCardBorder = isLeads ? '#4338ca' : '#b45309';
+
+  // (badges removidos do topo do funil)
+
+  // ── Cada estágio dentro do cone ──
+  // label, valor, sub-texto (taxa/métrica)
+  const coneStages = [
+    { label: 'Impressões',    value: impressions, sub1: fmtNumber(impressions),   sub2: `CPM ${fmtCurrency(cpm)}` },
+    { label: 'Cliques',       value: clicks,      sub1: fmtNumber(clicks),        sub2: `CTR ${fmtPercent(ctr)}` },
+    { label: 'Vis. de Página',value: lpv,         sub1: fmtNumber(lpv || 0),      sub2: rateLpv > 0 ? `${rateLpv.toFixed(1)}% dos cliques` : '—' },
+  ];
+
+  // Altura de cada estágio no cone (px) — cresce levemente para acomodar texto
+  const stH = 90;
+
+  const coneHtml = coneStages.map((s, i) => `
+    <div style="
+      background:${coneColors[i]};
+      height:${stH}px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      gap:1px;
+      ${i < coneStages.length-1 ? 'border-bottom:1px solid rgba(255,255,255,.1);' : ''}
+    ">
+      <p style="margin:0;font-size:10px;font-weight:600;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.08em;">${s.label}</p>
+      <p style="margin:0;font-size:26px;font-weight:700;color:#fff;font-family:'Fira Code',monospace;line-height:1.15;">${s.sub1}</p>
+      <p style="margin:0;font-size:11px;color:rgba(255,255,255,.38);">${s.sub2}</p>
+    </div>
+  `).join('');
+
+  // ── Percentual de drop-off lateral no cone ──
+  // Vai de 0% em cima até ~36% (18% por lado) em baixo para 3 estágios
+  // polygon(0% 0%, 100% 0%,  64% 100%, 36% 100%)
+  const coneClip = 'polygon(0% 0%, 100% 0%, 64% 100%, 36% 100%)';
+
+  $('funnel-stages').innerHTML = `
+    <div style="max-width:540px;margin:0 auto;">
+
+      <!-- Cone -->
+      <div style="clip-path:${coneClip};border-radius:3px 3px 0 0;overflow:hidden;">
+        ${coneHtml}
+      </div>
+
+      <!-- Conector -->
+      <div style="display:flex;justify-content:center;">
+        <div style="width:2px;height:20px;background:linear-gradient(to bottom,${coneColors[2]},${convCardBorder});"></div>
+      </div>
+
+      <!-- Card de conversão (fora do cone) -->
+      <div style="display:flex;justify-content:center;">
+        <div style="
+          background:${convCardBg};
+          border:1px solid ${convCardBorder};
+          border-radius:14px;
+          padding:18px 40px;
+          text-align:center;
+          box-shadow:0 0 0 4px ${convCardBorder}22, 0 8px 32px rgba(0,0,0,.5);
+          min-width:200px;
+        ">
+          <p style="margin:0 0 2px;font-size:10px;font-weight:700;color:${convAccent};text-transform:uppercase;letter-spacing:.1em;">${convLabel}</p>
+          <p style="margin:0 0 3px;font-size:32px;font-weight:700;color:#fff;font-family:'Fira Code',monospace;line-height:1.1;">${fmtNumber(convVal)}</p>
+          <p style="margin:0;font-size:12px;color:rgba(255,255,255,.45);">${costPerConv != null ? `${fmtCurrency(costPerConv)} / conv` : '—'}</p>
+        </div>
+      </div>
+
+      <!-- Taxas de drop-off entre estágios -->
+      <div style="margin-top:24px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap;">
+        ${[
+          { from:'Impressões', to:'Cliques',       pct: rateClicks, color: coneColors[1] },
+          { from:'Cliques',    to:'Vis. Página',   pct: rateLpv,    color: coneColors[2] },
+          { from:'Vis. Página',to:convLabel,        pct: rateConv,   color: convAccent    },
+        ].map(r => `
+          <div style="display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;background:#111118;border:1px solid #1e1e2a;">
+            <span style="font-size:10px;color:#475569;">${r.from} →</span>
+            <span style="font-size:12px;font-weight:700;color:${r.color};font-family:'Fira Code',monospace;">${r.pct.toFixed(1)}%</span>
+            <span style="font-size:10px;color:#475569;">${r.to}</span>
+          </div>`).join('')}
+      </div>
+
+    </div>`;
+
+  // ── Métricas resumo abaixo ──
+  $('funnel-summary-grid').innerHTML = [
+    { label: `Custo por ${convLabel}`, val: costPerConv != null ? fmtCurrency(costPerConv) : '—', sub: `${fmtNumber(convVal)} ${convLabel.toLowerCase()}`, color: convAccent },
+    { label: 'CTR',                    val: fmtPercent(ctr),                                       sub: 'impressões → cliques',                             color: '#8b5cf6' },
+    { label: 'Taxa de Visita',         val: rateLpv > 0 ? `${rateLpv.toFixed(1)}%` : '—',         sub: 'cliques → vis. página',                            color: '#3b82f6' },
+    { label: 'Taxa de Conversão',      val: rateConv > 0 ? `${rateConv.toFixed(2)}%` : '—',       sub: `vis. página → ${convLabel.toLowerCase()}`,         color: convAccent },
+    { label: 'CPM',                    val: fmtCurrency(cpm),                                      sub: 'custo / mil impressões',                           color: '#06b6d4' },
+    { label: 'CPC',                    val: fmtCurrency(cpc),                                      sub: 'custo por clique',                                 color: '#10b981' },
+    { label: 'Gasto Total',            val: fmtCurrency(spend),                                    sub: `${filtered.length} campanha${filtered.length!==1?'s':''}`, color: '#f472b6' },
+  ].map(c => `
+    <div class="card p-4">
+      <p style="font-size:10px;color:#475569;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">${c.label}</p>
+      <p style="font-size:20px;font-weight:700;color:${c.color};font-family:'Fira Code',monospace;margin-bottom:2px;">${c.val}</p>
+      <p style="font-size:11px;color:#475569;">${c.sub}</p>
+    </div>`).join('');
+}
+
+const ALL_SECTIONS = ['overview','campaigns','adsets','ads','funnel','leads','reports','diagnostics'];
+const NAV_ORDER    = ['overview','campaigns','adsets','ads','funnel','leads','reports','diagnostics'];
+
+function showSection(name) {
+  state.activeSection = name;
+  // Persist active tab in URL hash so page refresh restores the same section
+  history.replaceState(null, '', '#' + name);
+  ALL_SECTIONS.forEach(s => {
+    $(`section-${s}`).style.display = s === name ? '' : 'none';
+  });
+  document.querySelectorAll('.nav-link').forEach((el, i) => {
+    el.classList.toggle('active', i === NAV_ORDER.indexOf(name));
+  });
+  // Sync bottom nav active state
+  document.querySelectorAll('.bnav-item').forEach(el => {
+    el.classList.toggle('active', el.id === `bnav-${name}`);
+  });
+  // Update page title
+  const titles = {
+    overview:'Visão Geral', campaigns:'Campanhas', adsets:'Conjuntos de Anúncios',
+    ads:'Criativos', funnel:'Funil de Conversão', leads:'Leads',
+    reports:'Relatórios', diagnostics:'Diagnósticos'
+  };
+  const subs = {
+    overview:'Performance consolidada da conta', campaigns:'Detalhamento por campanha',
+    adsets:'Detalhamento por conjunto de anúncios', ads:'Performance por criativo',
+    funnel:'Da impressão até a conversão final', leads:'Captações da planilha',
+    reports:'Exportar dados', diagnostics:'Saúde da conta'
+  };
+  const h1 = document.querySelector('#topbar-row h1');
+  const sub = document.querySelector('#topbar-row p');
+  if (h1) h1.textContent = titles[name] || name;
+  if (sub) sub.textContent = subs[name] || '';
+  // Fecha sidebar no mobile ao navegar
+  closeSidebar();
+
+  // Lazy-load section data on first visit
+  if (name === 'adsets'      && !state.adsetLoaded)     { loadAdSets(); state.adsetLoaded = true; }
+  if (name === 'ads'         && !state.adsLoaded)        { loadAds();    state.adsLoaded = true; }
+  if (name === 'funnel'      && !state.funnelLoaded)     { loadFunnel(); state.funnelLoaded = true; }
+  if (name === 'funnel'      &&  state.funnelLoaded)     { renderFunnel(); } // re-render on revisit
+  if (name === 'leads'       && !state.leadsLoaded)       { loadLeads();      state.leadsLoaded = true; }
+  if (name === 'leads'       &&  state.leadsLoaded)       { renderLeads(); }   // re-renderiza se período mudou
+  if (name === 'diagnostics' && !state.diagLoaded)       { loadDiagnostics(); state.diagLoaded = true; }
+
+  // Update report-period label
+  if (name === 'reports') {
+    const preset = state.datePreset || `${state.dateSince} → ${state.dateUntil}`;
+    const labels = { today:'hoje', yesterday:'ontem', last_7d:'últimos 7 dias', last_14d:'últimos 14 dias', last_30d:'últimos 30 dias', last_90d:'últimos 90 dias', this_month:'este mês', last_month:'mês anterior' };
+    $('report-period-label').textContent = `Período: ${labels[preset] || preset}`;
+  }
+}
+
+/* ─────────────────────────────────────────────
+   LOAD AD SETS
+───────────────────────────────────────────── */
+async function loadAdSets() {
+  try {
+    const json = await apiFetch('adsets');
+    const rows = (json.data || []).map(r => {
+      const spend  = tx(r.spend);
+      const impr   = Number(r.impressions || 0);
+      const clicks = getLinkClicks(r.actions || []);
+      const lpv    = exactAction(r.actions || [], 'landing_page_view');
+      const conversions = calcConversions(r);
+      const ctr    = impr   > 0 ? (clicks / impr)  * 100 : 0;
+      const cpc    = clicks > 0 ? spend / clicks : 0;
+      const connectRate = clicks > 0 ? (lpv / clicks) * 100 : 0;
+      const convRate    = lpv    > 0 ? (conversions / lpv)    * 100 : 0;
+      const cpa         = conversions > 0 ? spend / conversions : 0;
+      const roasRaw     = calcRoas(r);
+      return {
+        adset_name:    r.adset_name    || '—',
+        campaign_name: r.campaign_name || '—',
+        status:        r.status        || '—',
+        spend,
+        cpm:           tx(r.cpm),
+        ctr,
+        cpc,
+        connectRate,
+        conversions,
+        convRate,
+        cpa,
+        roas: roasRaw != null ? roasRaw / TAX : null,
+      };
+    });
+
+    $('adsets-count').textContent = `${rows.length} conjunto${rows.length !== 1 ? 's' : ''}`;
+    state._adsets = rows;
+    renderAdSetsTable();
+
+    // Bar chart — top 10 por gasto
+    const top = [...rows].sort((a,b)=>b.spend-a.spend).slice(0,10);
+    $('chart-bar-adsets-skeleton').style.display='none';
+    const cv=$('chart-bar-adsets'); cv.style.display='block';
+    if (state.chartBarAdsets) state.chartBarAdsets.destroy();
+    state.chartBarAdsets = new Chart(cv,{data:{
+      labels:top.map(r=>r.adset_name.length>22?r.adset_name.slice(0,22)+'…':r.adset_name),
+      datasets:[
+        {type:'bar',  label:'Gasto', data:top.map(r=>r.spend),       backgroundColor:'rgba(99,102,241,0.75)',hoverBackgroundColor:'#818cf8',borderRadius:5,yAxisID:'y', order:2},
+        {type:'bar',  label:'Conv.', data:top.map(r=>r.conversions),  backgroundColor:'rgba(16,185,129,0.65)',hoverBackgroundColor:'#34d399',borderRadius:5,yAxisID:'y1',order:2},
+        {type:'line', label:'CPA',   data:top.map(r=>r.cpa>0?r.cpa:null),
+          borderColor:'#f59e0b',backgroundColor:'#f59e0b33',pointBackgroundColor:'#f59e0b',
+          pointRadius:4,pointHoverRadius:6,borderWidth:2,tension:0.3,spanGaps:true,yAxisID:'y',order:1},
+      ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'#18181f',borderColor:'#2e2e40',borderWidth:1,titleColor:'#94a3b8',bodyColor:'#e2e8f0',padding:10,
+        callbacks:{label:ctx=>{
+          if(ctx.dataset.label==='Gasto') return `  Gasto: ${fmtCurrency(ctx.parsed.y)}`;
+          if(ctx.dataset.label==='Conv.') return `  Conv.: ${fmtNumber(ctx.parsed.y)}`;
+          if(ctx.dataset.label==='CPA')   return `  CPA: ${ctx.parsed.y!=null?fmtCurrency(ctx.parsed.y):'—'}`;
+        }}}},
+      scales:{x:{ticks:{color:'#475569',font:{size:10.5},maxRotation:30},grid:{color:'#1e1e2a'},border:{color:'#1e1e2a'}},
+        y:{position:'left',ticks:{color:'#6366f1',font:{size:11},callback:v=>'R$'+(v>=1000?(v/1000).toFixed(1)+'k':v.toFixed(0))},grid:{color:'#1a1a24'},border:{color:'#1e1e2a'}},
+        y1:{position:'right',ticks:{color:'#10b981',font:{size:11},callback:v=>v>=1000?(v/1000).toFixed(1)+'k':Math.round(v)},grid:{drawOnChartArea:false},border:{color:'#1e1e2a'}}}}});
+
+  } catch(e) {
+    $('adsets-tbody').innerHTML = `<tr><td colspan="12" class="py-8 text-center text-red-400 text-sm">Erro: ${e.message}</td></tr>`;
+  }
+}
+
+function renderAdSetsTable() {
+  const data = applyActiveFilter(applySpendFilter(sortData(state._adsets, 'adsets')));
+  refreshSortIcons('adsets', ['adset_name','campaign_name','status','spend','cpm','ctr','cpc','connectRate','conversions','convRate','cpa','roas']);
+  const statusBadge = s => {
+    const map = { ACTIVE:'badge-success', PAUSED:'badge-warn', DELETED:'badge-danger', ARCHIVED:'badge-neutral' };
+    const lbl = { ACTIVE:'Ativo', PAUSED:'Pausado', DELETED:'Excluído', ARCHIVED:'Arquivado' };
+    return `<span class="badge ${map[s]||'badge-neutral'}">${lbl[s]||s}</span>`;
+  };
+  $('adsets-tbody').innerHTML = data.length
+    ? data.map(r => `
+      <tr>
+        <td><div class="font-medium text-slate-200 text-xs">${escHtml(r.adset_name)}</div></td>
+        <td class="text-xs text-slate-400">${escHtml(r.campaign_name)}</td>
+        <td>${statusBadge(r.status)}</td>
+        <td class="mono text-right text-slate-200">${fmtCurrency(r.spend)}</td>
+        <td class="mono text-right text-slate-400">${r.cpm > 0 ? fmtCurrency(r.cpm) : '—'}</td>
+        <td class="mono text-right text-slate-400">${r.ctr > 0 ? fmtPercent(r.ctr) : '—'}</td>
+        <td class="mono text-right text-slate-400">${r.cpc > 0 ? fmtCurrency(r.cpc) : '—'}</td>
+        <td class="mono text-right text-slate-400">${r.connectRate > 0 ? fmtPercent(r.connectRate) : '—'}</td>
+        <td class="mono text-right text-slate-400">${r.conversions > 0 ? fmtNumber(r.conversions) : '—'}</td>
+        <td class="mono text-right text-slate-400">${r.convRate > 0 ? fmtPercent(r.convRate) : '—'}</td>
+        <td class="mono text-right text-slate-400">${r.cpa > 0 ? fmtCurrency(r.cpa) : '—'}</td>
+        <td class="mono text-right text-slate-400">${r.roas != null && r.roas > 0 ? r.roas.toFixed(2)+'x' : '—'}</td>
+      </tr>`).join('')
+    : `<tr><td colspan="12" class="py-8 text-center text-slate-500 text-sm">Nenhum conjunto no período.</td></tr>`;
+}
+
+/* ─────────────────────────────────────────────
+   LOAD ADS / CRIATIVOS
+───────────────────────────────────────────── */
+async function loadAds() {
+  try {
+    const json = await apiFetch('ads');
+    const rows = (json.data || []).map(r => {
+      const spend  = tx(r.spend);
+      const impr   = Number(r.impressions || 0);
+      const clicks = getLinkClicks(r.actions || []);
+      const lpv    = exactAction(r.actions || [], 'landing_page_view');
+      const conversions = calcConversions(r);
+      const ctr    = impr   > 0 ? (clicks / impr)  * 100 : 0;
+      const cpc    = clicks > 0 ? spend / clicks : 0;
+      const connectRate = clicks > 0 ? (lpv / clicks) * 100 : 0;
+      const convRate    = lpv    > 0 ? (conversions / lpv)    * 100 : 0;
+      const cpa         = conversions > 0 ? spend / conversions : 0;
+      const roasRaw     = calcRoas(r);
+      return {
+        ad_id:               r.ad_id              || '',
+        ad_name:             r.ad_name            || '—',
+        campaign_name:       r.campaign_name      || '—',
+        status:              r.status             || '—',
+        thumbnail_url:       r.thumbnail_url      || null,
+        permalink_url:       r.permalink_url      || null,
+        instagram_permalink: r.instagram_permalink|| null,
+        spend,
+        cpm:          tx(r.cpm),
+        ctr,
+        cpc,
+        connectRate,
+        conversions,
+        convRate,
+        cpa,
+        roas: roasRaw != null ? roasRaw / TAX : null,
+      };
+    });
+
+    $('ads-count').textContent = `${rows.length} anúncio${rows.length !== 1 ? 's' : ''}`;
+    state._ads = rows;
+    renderAdsTable();
+  } catch(e) {
+    $('ads-tbody').innerHTML = `<tr><td colspan="12" class="py-8 text-center text-red-400 text-sm">Erro: ${e.message}</td></tr>`;
+  }
+}
+
+function heatColor(val, min, max, lowerIsBetter) {
+  if (min === max) return '#10b981';
+  const t = lowerIsBetter ? (val - min) / (max - min) : (max - val) / (max - min);
+  const r = Math.round(16  + (239 - 16)  * t);
+  const g = Math.round(185 + (68  - 185) * t);
+  const b = Math.round(129 + (68  - 129) * t);
+  return 'rgb(' + r + ',' + g + ',' + b + ')';
+}
+
+function renderAdsTable() {
+  const data = applyActiveFilter(applySpendFilter(sortData(state._ads, 'ads')));
+  refreshSortIcons('ads', ['ad_name','status','spend','cpm','ctr','cpc','connectRate','conversions','convRate','cpa','roas']);
+  const validCpas = data.filter(r => r.cpa > 0).map(r => r.cpa);
+  const minCpa = validCpas.length ? Math.min(...validCpas) : 0;
+  const maxCpa = validCpas.length ? Math.max(...validCpas) : 0;
+  const statusBadge = s => {
+    const map = { ACTIVE:'badge-success', PAUSED:'badge-warn', DELETED:'badge-danger', ARCHIVED:'badge-neutral' };
+    const lbl = { ACTIVE:'Ativo', PAUSED:'Pausado', DELETED:'Excluído', ARCHIVED:'Arquivado' };
+    return `<span class="badge ${map[s]||'badge-neutral'}">${lbl[s]||s}</span>`;
+  };
+  const linkBtn = (href, label, style) =>
+    `<a href="${escHtml(href)}" target="_blank" rel="noopener" style="${style};display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:7px;font-size:11px;font-weight:600;text-decoration:none;white-space:nowrap;">${label}</a>`;
+
+  $('ads-tbody').innerHTML = data.length
+    ? data.map(r => `
+      <tr>
+        <td>
+          <div class="flex items-center gap-2">
+            ${r.thumbnail_url
+              ? `<img src="${r.thumbnail_url}" class="w-10 h-10 rounded object-cover flex-shrink-0" style="border:1px solid #1e1e2a;" alt="">`
+              : `<div class="w-10 h-10 rounded flex-shrink-0 flex items-center justify-center" style="background:#18181f;border:1px solid #1e1e2a;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2"><rect x="3" y="3" width="18" height="14" rx="2"/></svg></div>`}
+            <div>
+              <div class="font-medium text-slate-200 text-xs leading-tight">${escHtml(r.ad_name)}</div>
+              <div class="text-slate-600 text-xs mt-0.5">${escHtml(r.campaign_name)}</div>
+            </div>
+          </div>
+        </td>
+        <td>${statusBadge(r.status)}</td>
+        <td class="mono text-right text-slate-200">${fmtCurrency(r.spend)}</td>
+        <td class="mono text-right text-slate-400">${r.cpm > 0 ? fmtCurrency(r.cpm) : '—'}</td>
+        <td class="mono text-right" style="${r.ctr > 0 ? 'color:'+(r.ctr >= 1 ? '#10b981' : '#ef4444')+';font-weight:600;' : 'color:#475569;'}">${r.ctr > 0 ? fmtPercent(r.ctr) : '—'}</td>
+        <td class="mono text-right text-slate-400">${r.cpc > 0 ? fmtCurrency(r.cpc) : '—'}</td>
+        <td class="mono text-right text-slate-400">${r.connectRate > 0 ? fmtPercent(r.connectRate) : '—'}</td>
+        <td class="mono text-right text-slate-400">${r.conversions > 0 ? fmtNumber(r.conversions) : '—'}</td>
+        <td class="mono text-right text-slate-400">${r.convRate > 0 ? fmtPercent(r.convRate) : '—'}</td>
+        <td class="mono text-right" style="${r.cpa > 0 ? 'color:'+heatColor(r.cpa,minCpa,maxCpa,true)+';font-weight:600;' : 'color:#475569;'}">${r.cpa > 0 ? fmtCurrency(r.cpa) : '—'}</td>
+        <td class="mono text-right text-slate-400">${r.roas != null && r.roas > 0 ? r.roas.toFixed(2)+'x' : '—'}</td>
+        <td style="text-align:center;">
+          <div style="display:inline-flex;gap:4px;align-items:center;">
+            ${r.instagram_permalink ? linkBtn(r.instagram_permalink,
+                `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg> IG`,
+                'color:#fff;background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);') : ''}
+            ${r.permalink_url && r.permalink_url !== r.instagram_permalink ? linkBtn(r.permalink_url,
+                `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg> FB`,
+                'color:#818cf8;background:#6366f115;border:1px solid #6366f130;') : ''}
+            ${!r.permalink_url && !r.instagram_permalink ? `<span style="font-size:11px;color:#475569;">—</span>` : ''}
+          </div>
+        </td>
+      </tr>`).join('')
+    : `<tr><td colspan="12" class="py-8 text-center text-slate-500 text-sm">Nenhum anúncio no período.</td></tr>`;
+}
+
+
+/* ─────────────────────────────────────────────
+   LOAD DIAGNOSTICS
+───────────────────────────────────────────── */
+async function loadDiagnostics() {
+  try {
+    const json = await apiFetch('account');
+
+    const statusMap = { 1:'Ativa', 2:'Desativada', 3:'Sem Pagamento', 7:'Arquivada', 9:'Aguardando revisão', 100:'Pendente' };
+    const statusCls = { 1:'badge-success', 2:'badge-danger', 3:'badge-danger', 9:'badge-warn' };
+    const s = json.account_status;
+
+    $('diag-account').innerHTML = `
+      <div class="space-y-2">
+        <div class="flex justify-between"><span class="text-slate-500">Nome</span><span class="text-slate-200">${escHtml(json.name||'—')}</span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Moeda</span><span class="text-slate-200">${json.currency||'—'}</span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Fuso</span><span class="text-slate-200">${(json.timezone_name||'—').replace('America/','')}</span></div>
+        <div class="flex justify-between items-center"><span class="text-slate-500">Status</span><span class="badge ${statusCls[s]||'badge-neutral'}">${statusMap[s]||'Status '+s}</span></div>
+      </div>`;
+
+    $('diag-pixel').innerHTML = `<p class="text-slate-400">Para verificar seu pixel, acesse o <a href="https://business.facebook.com/events_manager" target="_blank" class="text-indigo-400 underline">Gerenciador de Eventos</a> do Meta Business Suite.</p>`;
+
+    $('diag-cache').innerHTML = `<p class="text-slate-200">${new Date().toLocaleString('pt-BR')}</p><p class="text-slate-500 mt-1">Dados atualizados a cada clique em "Atualizar"</p>`;
+
+    $('diag-api-info').innerHTML = `
+      <div class="grid grid-cols-2 gap-x-8 gap-y-2">
+        <div class="flex justify-between border-b pb-1" style="border-color:#1e1e2a;"><span class="text-slate-500">Versão da API</span><span class="mono text-slate-300">v20.0</span></div>
+        <div class="flex justify-between border-b pb-1" style="border-color:#1e1e2a;"><span class="text-slate-500">Endpoint</span><span class="mono text-slate-300">/api/meta</span></div>
+        <div class="flex justify-between border-b pb-1" style="border-color:#1e1e2a;"><span class="text-slate-500">Conta</span><span class="mono text-slate-300">act_***</span></div>
+        <div class="flex justify-between border-b pb-1" style="border-color:#1e1e2a;"><span class="text-slate-500">Token</span><span class="mono text-slate-300">configurado ✓</span></div>
+      </div>`;
+
+  } catch(e) {
+    $('diag-account').textContent = 'Erro: ' + e.message;
+  }
+}
+
+
+/* ─────────────────────────────────────────────
+   LEADS — Google Sheets
+───────────────────────────────────────────── */
+
+// Converte "DD/MM/YYYY" → Date
+function parsePtDate(str) {
+  if (!str || typeof str !== 'string') return null;
+  const parts = str.trim().split('/');
+  if (parts.length !== 3) return null;
+  const [d, m, y] = parts;
+  if (!d || !m || !y) return null;
+  return new Date(`${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}T12:00:00`);
+}
+
+// Retorna { since, until } como objetos Date do período selecionado
+function getCurrentPeriodBounds() {
+  const preset   = state.datePreset;
+  const sinceStr = state.dateSince;
+  const untilStr = state.dateUntil;
+
+  if (sinceStr && untilStr) {
+    return {
+      since: new Date(sinceStr + 'T00:00:00'),
+      until: new Date(untilStr + 'T23:59:59'),
+    };
+  }
+
+  const today = new Date(); today.setHours(23, 59, 59, 999);
+  const day0  = new Date(); day0.setHours(0, 0, 0, 0);
+  const daysMap = { last_7d: 7, last_14d: 14, last_30d: 30, last_90d: 90 };
+
+  if (preset === 'today') {
+    return { since: day0, until: today };
+  }
+  if (preset === 'yesterday') {
+    const yStart = new Date(day0); yStart.setDate(day0.getDate() - 1);
+    const yEnd   = new Date(yStart); yEnd.setHours(23, 59, 59, 999);
+    return { since: yStart, until: yEnd };
+  }
+  if (daysMap[preset]) {
+    const since = new Date(day0); since.setDate(day0.getDate() - daysMap[preset]);
+    return { since, until: today };
+  }
+  if (preset === 'this_month') {
+    return { since: new Date(today.getFullYear(), today.getMonth(), 1), until: today };
+  }
+  if (preset === 'last_month') {
+    return {
+      since: new Date(today.getFullYear(), today.getMonth() - 1, 1),
+      until: new Date(today.getFullYear(), today.getMonth(), 0, 23, 59, 59),
+    };
+  }
+  return null; // sem filtro = todos
+}
+
+// Filtra leads pelo período selecionado
+function filterLeadsByPeriod(rows) {
+  const bounds = getCurrentPeriodBounds();
+  if (!bounds) return rows;
+  return rows.filter(r => {
+    const d = parsePtDate(r['Data']);
+    return d && d >= bounds.since && d <= bounds.until;
+  });
+}
+
+// Agrupa array de objetos por campo, retorna [[nome, count]] ordenado desc
+function groupLeadsBy(rows, key) {
+  const map = {};
+  for (const r of rows) {
+    const val = (r[key] || '').trim() || '(não informado)';
+    map[val] = (map[val] || 0) + 1;
+  }
+  return Object.entries(map).sort((a, b) => b[1] - a[1]);
+}
+
+// Busca dados da planilha + links dos anúncios em paralelo
+async function loadLeads() {
+  try {
+    $('kpi-leads-total').classList.add('skeleton');
+    $('kpi-leads-compare').classList.add('skeleton');
+    $('chart-leads-skeleton').style.display = '';
+    $('chart-leads').style.display = 'none';
+
+    const [sheetJson] = await Promise.all([
+      fetch('/api/sheets?sheet=Leads%20da%20capta%C3%A7%C3%A3o').then(r => r.json()),
+      _loadAdLinks(),
+    ]);
+
+    if (sheetJson.error) throw new Error(sheetJson.error);
+    state._leadsRaw = sheetJson.data || [];
+    renderLeads();
+  } catch(e) {
+    console.error('Leads error:', e.message);
+    $('leads-detail-tbody').innerHTML = `<tr><td colspan="6" class="py-8 text-center text-red-400 text-sm">Erro ao carregar planilha: ${e.message}</td></tr>`;
+    const kpiEl = $('kpi-leads-total');
+    if (kpiEl) { unSkeleton(kpiEl); kpiEl.textContent = 'Erro'; }
+  }
+}
+
+// Popula state._adLinks: ad_name → { ig, fb }
+// Reutiliza state._ads se já carregado pela aba Anúncios; caso contrário busca da API
+async function _loadAdLinks() {
+  if (Object.keys(state._adLinks).length > 0) return; // já populado
+  try {
+    const rows = state._ads.length > 0
+      ? state._ads
+      : (await apiFetch('ads')).data || [];
+    const map = {};
+    for (const r of rows) {
+      const name = (r.ad_name || '').trim();
+      if (!name) continue;
+      map[name] = {
+        ig: r.instagram_permalink || null,
+        fb: r.permalink_url       || null,
+      };
+    }
+    state._adLinks = map;
+  } catch(e) {
+    console.warn('_loadAdLinks:', e.message);
+    state._adLinks = {};
+  }
+}
+
+const BD_COLORS = ['#6366f1','#10b981','#f59e0b','#3b82f6','#ec4899','#8b5cf6','#14b8a6','#f97316','#06b6d4','#84cc16'];
+
+function renderLeads() {
+  const all      = state._leadsRaw || [];
+  const filtered = filterLeadsByPeriod(all);
+  const total    = filtered.length;
+
+  // ── KPI: total leads ──
+  const kpiEl = $('kpi-leads-total');
+  if (kpiEl) { unSkeleton(kpiEl); kpiEl.textContent = fmtNumber(total); }
+
+  // ── KPI: rótulo do período ──
+  const bounds   = getCurrentPeriodBounds();
+  const periodEl = $('kpi-leads-period');
+  if (periodEl && bounds) {
+    const fmt = d => d.toLocaleDateString('pt-BR', { day:'2-digit', month:'short' });
+    periodEl.textContent = `${fmt(bounds.since)} → ${fmt(bounds.until)}`;
+  } else if (periodEl) {
+    periodEl.textContent = `Total: ${fmtNumber(all.length)} leads`;
+  }
+
+  // ── KPI: Meta vs Planilha ──
+  const cmpEl = $('kpi-leads-compare');
+  if (cmpEl) {
+    unSkeleton(cmpEl);
+    const metaConv = state._overviewRaw ? calcConversions(state._overviewRaw) : null;
+    if (metaConv != null && metaConv > 0) {
+      const diff  = total - metaConv;
+      const sign  = diff >= 0 ? '+' : '';
+      const color = diff >= 0 ? '#10b981' : '#ef4444';
+      cmpEl.innerHTML = `
+        <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;">
+          <span style="font-size:20px;font-weight:700;font-family:'Fira Code';color:#e2e8f0;" title="Planilha">${fmtNumber(total)}</span>
+          <span style="font-size:11px;color:#64748b;">vs</span>
+          <span style="font-size:20px;font-weight:700;font-family:'Fira Code';color:#818cf8;" title="Meta">${fmtNumber(metaConv)}</span>
+        </div>`;
+      const subEl = $('kpi-leads-compare-sub');
+      if (subEl) {
+        subEl.textContent = `${sign}${Math.round(diff)} (planilha vs Meta)`;
+        subEl.style.color = color;
+      }
+    } else {
+      cmpEl.innerHTML = `<span style="font-size:22px;font-weight:700;font-family:'Fira Code';color:#e2e8f0;">${fmtNumber(total)}</span>`;
+      const subEl = $('kpi-leads-compare-sub');
+      if (subEl) subEl.textContent = 'Meta: dados não carregados';
+    }
+  }
+
+  // ── Gráfico: leads por dia ──
+  const dailyMap = {};
+  for (const r of filtered) {
+    const d = parsePtDate(r['Data']);
+    if (!d) continue;
+    const key = d.toISOString().slice(0, 10);
+    dailyMap[key] = (dailyMap[key] || 0) + 1;
+  }
+  const dates  = Object.keys(dailyMap).sort();
+  const counts = dates.map(d => dailyMap[d]);
+
+  $('chart-leads-skeleton').style.display = 'none';
+  const canvas = $('chart-leads');
+  canvas.style.display = 'block';
+
+  if (state.chartLeads) state.chartLeads.destroy();
+
+  if (dates.length > 0) {
+    state.chartLeads = new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: dates,
+        datasets: [{
+          label: 'Leads',
+          data: counts,
+          backgroundColor: 'rgba(16,185,129,0.55)',
+          hoverBackgroundColor: '#34d399',
+          borderRadius: 5,
+          borderSkipped: false,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#18181f', borderColor: '#2e2e40', borderWidth: 1,
+            titleColor: '#94a3b8', bodyColor: '#e2e8f0', padding: 10,
+            callbacks: {
+              title: ctx => fmtDate(ctx[0].label),
+              label: ctx => `  Leads: ${ctx.parsed.y}`,
+            },
+          },
+        },
+        scales: {
+          x: {
+            ticks: { color: '#475569', font: { size: 11, family: 'Fira Code' }, maxTicksLimit: 14 },
+            grid: { color: '#1e1e2a' }, border: { color: '#1e1e2a' },
+          },
+          y: {
+            ticks: { color: '#475569', font: { size: 11, family: 'Fira Code' }, precision: 0 },
+            grid: { color: '#1a1a24' }, border: { color: '#1e1e2a' }, beginAtZero: true,
+          },
+        },
+      },
+    });
+  }
+
+  // Badge
+  const badge = $('leads-chart-badge');
+  if (badge) {
+    badge.textContent = `${total} leads · ${dates.length} dias`;
+    badge.style.display = '';
+  }
+
+  // ── Helper: renderiza tabela de breakdown ──
+  // linkMap opcional: { [nome]: { ig: url|null, fb: url|null } }
+  function renderBreakdown(tbodyId, countId, rows, linkMap = null) {
+    const countEl = $(countId);
+    if (countEl) countEl.textContent = `${rows.length}`;
+    const tbody = $(tbodyId);
+    if (!tbody) return;
+
+    const extIcon = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;opacity:.55;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
+
+    tbody.innerHTML = rows.length
+      ? rows.map(([name, count]) => {
+          let nameCell;
+          if (linkMap) {
+            const lk = linkMap[name];
+            const href = lk?.ig || lk?.fb || null;
+            if (href) {
+              const isIg = !!lk?.ig;
+              nameCell = `<a href="${escHtml(href)}" target="_blank" rel="noopener"
+                style="display:inline-flex;align-items:center;gap:4px;color:${isIg ? '#c084fc' : '#818cf8'};text-decoration:none;font-weight:500;"
+                title="${escHtml(name)}">
+                <span style="font-size:11px;">${escHtml(name)}</span>${extIcon}
+              </a>`;
+            } else {
+              nameCell = `<div class="text-xs text-slate-200 font-medium" title="${escHtml(name)}">${escHtml(name)}</div>`;
+            }
+          } else {
+            nameCell = `<div class="text-xs text-slate-200 font-medium" title="${escHtml(name)}">${escHtml(name)}</div>`;
+          }
+          return `
+          <tr>
+            <td>${nameCell}</td>
+            <td class="mono text-right text-slate-200">${fmtNumber(count)}</td>
+            <td class="mono text-right text-slate-500">${total > 0 ? ((count/total)*100).toFixed(1)+'%' : '—'}</td>
+          </tr>`;
+        }).join('')
+      : `<tr><td colspan="3" class="py-6 text-center text-slate-500 text-sm">Sem dados</td></tr>`;
+
+    // Salva dados para uso no pie chart
+    const bdKey = tbodyId.replace('leads-','').replace('-tbody','');
+    state._bdData = state._bdData || {};
+    state._bdData[bdKey] = { rows, total };
+
+    // Se o card estiver no modo pizza, atualizar o chart
+    const togEl = document.querySelector(`.breakdown-toggle[data-id="${bdKey}"]`);
+    if (togEl) {
+      const activePie = togEl.querySelector('.btog[data-view="pie"].active');
+      if (activePie) renderBreakdownPie(bdKey, rows, total);
+    }
+  }
+
+  // Source=rede · Campaign=campanha · Medium=conjunto · Content=anúncio · Term=posicionamento
+  renderBreakdown('leads-origem-tbody',   'leads-origem-count',   groupLeadsBy(filtered, 'Origem'));
+  renderBreakdown('leads-source-tbody',   'leads-source-count',   groupLeadsBy(filtered, 'Source'));
+  renderBreakdown('leads-campaign-tbody', 'leads-campaign-count', groupLeadsBy(filtered, 'Campaign'));
+  renderBreakdown('leads-conjunto-tbody', 'leads-conjunto-count', groupLeadsBy(filtered, 'Medium'));
+  renderBreakdown('leads-anuncio-tbody',  'leads-anuncio-count',  groupLeadsBy(filtered, 'Content'), state._adLinks);
+  renderBreakdown('leads-term-tbody',     'leads-term-count',     groupLeadsBy(filtered, 'Term'));
+
+  // ── Tabela detalhada (mais recente primeiro) ──
+  const sorted = [...filtered].sort((a, b) => {
+    const da = parsePtDate(a['Data']), db = parsePtDate(b['Data']);
+    if (!da || !db) return 0;
+    return db - da;
+  });
+
+  const detCount = $('leads-detail-count');
+  if (detCount) detCount.textContent = `${total} lead${total !== 1 ? 's' : ''}`;
+
+  // Armazena todos os rows e reseta para página 1
+  state._leadsRows = sorted;
+  state._leadsPage = 1;
+  renderLeadsPage();
+}
+
+const LEADS_PER_PAGE = 20;
+
+function renderLeadsPage() {
+  const rows  = state._leadsRows || [];
+  const page  = state._leadsPage || 1;
+  const total = rows.length;
+  const totalPages = Math.max(1, Math.ceil(total / LEADS_PER_PAGE));
+  const start = (page - 1) * LEADS_PER_PAGE;
+  const slice = rows.slice(start, start + LEADS_PER_PAGE);
+
+  const detBody = $('leads-detail-tbody');
+  if (detBody) {
+    detBody.innerHTML = slice.length
+      ? slice.map(r => `
+          <tr>
+            <td class="mono text-slate-400">${escHtml(r['Data'] || '—')}</td>
+            <td class="text-xs text-slate-300">${escHtml(r['Origem'] || '—')}</td>
+            <td class="mono text-xs text-slate-400">${escHtml(r['E-mail'] || '—')}</td>
+            <td class="text-xs text-slate-500">${escHtml(r['Source'] || '—')}</td>
+            <td class="text-xs text-slate-400">${escHtml(r['Campaign'] || '—')}</td>
+            <td class="text-xs text-slate-500">${escHtml(r['Medium'] || '—')}</td>
+            <td class="text-xs text-slate-400">${escHtml(r['Content'] || '—')}</td>
+            <td class="text-xs text-slate-500">${escHtml(r['Term'] || '—')}</td>
+          </tr>`).join('')
+      : `<tr><td colspan="8" class="py-8 text-center text-slate-500 text-sm">Nenhum lead no período selecionado.</td></tr>`;
+  }
+
+  // Paginação
+  const pag     = $('leads-pagination');
+  const info    = $('leads-page-info');
+  const btns    = $('leads-page-btns');
+  if (!pag) return;
+
+  if (totalPages <= 1) { pag.style.display = 'none'; return; }
+  pag.style.display = 'flex';
+
+  const from = start + 1, to = Math.min(start + LEADS_PER_PAGE, total);
+  if (info) info.textContent = `${from}–${to} de ${total} leads`;
+
+  if (btns) {
+    const maxBtn = 7;
+    let pages = [];
+    if (totalPages <= maxBtn) {
+      pages = Array.from({length: totalPages}, (_, i) => i + 1);
+    } else {
+      pages = [1];
+      if (page > 3) pages.push('…');
+      for (let p = Math.max(2, page-1); p <= Math.min(totalPages-1, page+1); p++) pages.push(p);
+      if (page < totalPages - 2) pages.push('…');
+      pages.push(totalPages);
+    }
+
+    btns.innerHTML = pages.map(p => p === '…'
+      ? `<span class="text-slate-600 px-1 text-xs">…</span>`
+      : `<button onclick="goLeadsPage(${p})" class="date-btn text-xs min-w-[28px] ${p === page ? 'active' : ''}">${p}</button>`
+    ).join('');
+  }
+}
+
+function goLeadsPage(p) {
+  state._leadsPage = p;
+  renderLeadsPage();
+  $('leads-detail-tbody')?.closest('.table-scroll-wrap')?.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+/* ── Breakdown toggle lista / pizza ── */
+const _bdCharts = {};
+
+function toggleBreakdownView(id, view) {
+  const listEl = $(`leads-${id}-list`);
+  const pieEl  = $(`leads-${id}-pie`);
+  const togEl  = document.querySelector(`.breakdown-toggle[data-id="${id}"]`);
+  if (!listEl || !pieEl || !togEl) return;
+
+  // Atualiza botões
+  togEl.querySelectorAll('.btog').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+
+  if (view === 'list') {
+    listEl.style.display = '';
+    pieEl.style.display  = 'none';
+  } else {
+    listEl.style.display = 'none';
+    pieEl.style.display  = '';
+    const bd = (state._bdData || {})[id];
+    if (bd) renderBreakdownPie(id, bd.rows, bd.total);
+  }
+}
+
+function renderBreakdownPie(id, rows, total) {
+  const canvas = $(`chart-bd-${id}`);
+  if (!canvas) return;
+  const MAX = 8;
+  let labels = [], data = [], colors = [];
+  const top = rows.slice(0, MAX);
+  const rest = rows.slice(MAX);
+  top.forEach(([name, count], i) => {
+    // Trunca labels longos
+    labels.push(name.length > 22 ? name.slice(0, 21) + '…' : name);
+    data.push(count);
+    colors.push(BD_COLORS[i % BD_COLORS.length]);
+  });
+  if (rest.length) {
+    labels.push(`Outros (${rest.length})`);
+    data.push(rest.reduce((s, [,c]) => s + c, 0));
+    colors.push('#334155');
+  }
+
+  if (_bdCharts[id]) { _bdCharts[id].destroy(); delete _bdCharts[id]; }
+
+  _bdCharts[id] = new Chart(canvas, {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderColor: '#13131a', borderWidth: 2, hoverOffset: 6 }] },
+    options: {
+      responsive: true,
+      cutout: '60%',
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { color: '#94a3b8', font: { size: 11 }, padding: 10, boxWidth: 10, boxHeight: 10 }
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const val = ctx.parsed;
+              const pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
+              return ` ${val} leads (${pct}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+function exportLeadsCSV() {
+  const all      = state._leadsRaw || [];
+  const filtered = filterLeadsByPeriod(all);
+  if (!filtered.length) { alert('Nenhum lead no período para exportar.'); return; }
+
+  const headers = ['Data','Origem','E-mail','Campaign','Source','Medium','Content','Term'];
+  const rows    = filtered.map(r => headers.map(h => `"${(r[h] || '').replace(/"/g, '""')}"`));
+  const csv     = [headers.join(';'), ...rows.map(r => r.join(';'))].join('\n');
+  const blob    = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const link    = document.createElement('a');
+  link.href     = URL.createObjectURL(blob);
+  link.download = `leads-captacao-${new Date().toISOString().slice(0, 10)}.csv`;
+  link.click();
+}
+
+
+/* ─────────────────────────────────────────────
+   DATE PRESETS
+───────────────────────────────────────────── */
+document.querySelectorAll('[data-preset]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-preset]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.datePreset = btn.dataset.preset;
+    state.dateSince  = null;
+    state.dateUntil  = null;
+    $('date-since').value = '';
+    $('date-until').value = '';
+    loadAll();
+  });
+});
+
+$('date-since').addEventListener('change', applyCustomDate);
+$('date-until').addEventListener('change', applyCustomDate);
+
+function applyCustomDate() {
+  const since = $('date-since').value;
+  const until = $('date-until').value;
+  if (since && until) {
+    state.dateSince  = since;
+    state.dateUntil  = until;
+    state.datePreset = null;
+    document.querySelectorAll('[data-preset]').forEach(b => b.classList.remove('active'));
+    loadAll();
+  }
+}
+
+
+/* ─────────────────────────────────────────────
+   LOAD ALL
+───────────────────────────────────────────── */
+async function loadAll() {
+  setRefreshing(true);
+  // Reset lazy-load flags so sections reload with new period
+  state.adsetLoaded = false; state.adsLoaded = false;
+  state.audiencesLoaded = false; state.diagLoaded = false;
+  state.funnelLoaded = false; state._overviewRaw = null;
+  // Leads: não re-busca a planilha (dados estáticos), mas re-renderiza com novo período
+  if (state._leadsRaw) renderLeads();
+
+  const activeNow = state.activeSection;
+
+  await Promise.all([
+    loadOverview(),
+    loadDailyChart(),
+    loadCampaigns(),
+    activeNow === 'adsets' ? (state.adsetLoaded  = true, loadAdSets()) : Promise.resolve(),
+    activeNow === 'ads'    ? (state.adsLoaded     = true, loadAds())    : Promise.resolve(),
+  ]);
+
+  // Seções que dependem de state.campaigns — renderizar após o reload
+  if (activeNow === 'funnel') { state.funnelLoaded = true; renderFunnel(); }
+  setRefreshing(false);
+  const now = new Date().toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  $('last-updated').textContent = `Atualizado às ${now}`;
+}
+
+
+/* ─────────────────────────────────────────────
+   INIT
+───────────────────────────────────────────── */
+(async () => {
+  // Restore last active section from URL hash (e.g. #leads, #campaigns…)
+  const hashSection = location.hash.slice(1);
+  if (hashSection && ALL_SECTIONS.includes(hashSection)) {
+    showSection(hashSection);
+  }
+  await loadAccount();
+  await loadAll();
+})();
+</script>
+
+<!-- ══════════════════════════════════════════════════════════
+     BOTTOM NAVIGATION (mobile only, hidden via CSS on ≥768px)
+══════════════════════════════════════════════════════════ -->
+<nav id="bottom-nav" aria-label="Navegação principal">
+
+  <button class="bnav-item active" id="bnav-overview" onclick="showSection('overview')">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    Geral
+  </button>
+
+  <button class="bnav-item" id="bnav-campaigns" onclick="showSection('campaigns')">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+    Campanhas
+  </button>
+
+  <button class="bnav-item" id="bnav-leads" onclick="showSection('leads')">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    Leads
+  </button>
+
+  <button class="bnav-item" id="bnav-ads" onclick="showSection('ads')">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+    Criativos
+  </button>
+
+  <button class="bnav-item" id="bnav-funnel" onclick="showSection('funnel')">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 4a1 1 0 0 1 1-1h16a1 1 0 0 1 .78 1.625L14 12.236V20a1 1 0 0 1-1.447.894l-4-2A1 1 0 0 1 8 17v-4.764L3.22 5.625A1 1 0 0 1 3 4z"/></svg>
+    Funil
+  </button>
+
+</nav>
+
+</body>
+</html>
