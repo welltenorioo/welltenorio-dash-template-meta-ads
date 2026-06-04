@@ -32,7 +32,7 @@ Instrua o usuário a criar conta em cloudflare.com se ainda não tiver. Confirme
 Guie o usuário a criar um projeto Pages conectando o repositório GitHub. Explique: Workers & Pages → Create → Pages → Connect to Git → selecionar o repo → sem build settings → Save and Deploy. Peça a URL gerada (ex: `https://projeto.pages.dev`). Com a URL em mãos, atualize `ALLOWED_ORIGIN` em `functions/api/meta.js`.
 
 **Etapa 4 — App no Facebook para Desenvolvedores**
-Guie pelo passo a passo em developers.facebook.com: criar app tipo "Outros" → "Empresa" → vincular Business Manager → vincular conta de anúncios.
+Guie pelo passo a passo em developers.facebook.com: criar app tipo "Outros" → "Empresa" → vincular Business Manager. Após criar o app, instruir a ir no Business Manager (business.facebook.com) → Configurações do Negócio → Contas → Apps → selecionar o app → Adicionar Ativos → Contas de Anúncios → marcar a conta do cliente → Salvar.
 
 **Etapa 5 — Usuário do sistema e token**
 Guie em business.facebook.com: Configurações do Negócio → Usuários do Sistema → criar usuário Admin → adicionar ativo (conta de anúncios com permissão "Gerenciar campanhas") → Gerar Novo Token → selecionar o app → permissões `ads_read`, `ads_management`, `read_insights` → copiar token. Peça também o ID da conta de anúncios (só os números, sem `act_`).

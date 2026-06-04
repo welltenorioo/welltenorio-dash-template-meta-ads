@@ -73,8 +73,11 @@ Se preferir fazer manual, siga o passo a passo abaixo.
 
 ### Etapa 5 — Vincular a conta de anúncios ao app
 
-1. Dentro do app criado, vá em **"Configurações"** → **"Avançado"**
-2. Role até **"Contas de Anúncios"** e adicione o ID da conta de anúncios do cliente
+1. Acesse o Business Manager em [business.facebook.com](https://business.facebook.com)
+2. Vá em **"Configurações do Negócio"** → **"Contas"** → **"Apps"**
+3. Localize o app que você criou na Etapa 4 e clique nele
+4. Clique em **"Adicionar Ativos"** → selecione **"Contas de Anúncios"**
+5. Marque a conta de anúncios do cliente e clique em **"Salvar Alterações"**
 
 ---
 
