@@ -5,6 +5,61 @@ Ao pedir mudanças ao Claude Code, ele deve seguir exatamente este design system
 
 ---
 
+## Modo Setup — Onboarding Guiado
+
+**Quando um novo usuário abrir este projeto, verifique imediatamente:**
+
+1. Se `index.html` ainda contém o texto `NOME_DO_CLIENTE`
+2. Se `ALLOWED_ORIGIN` em `functions/api/meta.js` ainda é `"*"`
+
+Se qualquer uma dessas condições for verdadeira, o projeto **ainda não foi configurado para um cliente**. Nesse caso, **inicie automaticamente o onboarding guiado** seguindo o roteiro abaixo. Não espere o usuário pedir — apresente-se e comece.
+
+### Roteiro de onboarding
+
+Apresente-se assim:
+
+> "Olá! Vejo que este dashboard ainda não foi configurado. Vou te guiar por cada etapa — é só me responder conforme avançamos. Vamos começar?"
+
+Em seguida, percorra as etapas na ordem abaixo. **Confirme a conclusão de cada etapa antes de avançar para a próxima.** Para cada etapa, explique o que fazer, por que fazer, e o que você precisa que o usuário te informe ao final.
+
+**Etapa 1 — Nome do cliente**
+Pergunte o nome do cliente. Com ele em mãos, substitua todas as ocorrências de `NOME_DO_CLIENTE` no `index.html` e atualize o `<title>`. Atualize também o `name` no `wrangler.toml` para um slug sem espaços (ex: `maria-silva-dashboard`).
+
+**Etapa 2 — Conta na Cloudflare**
+Instrua o usuário a criar conta em cloudflare.com se ainda não tiver. Confirme quando estiver feito.
+
+**Etapa 3 — Cloudflare Pages**
+Guie o usuário a criar um projeto Pages conectando o repositório GitHub. Explique: Workers & Pages → Create → Pages → Connect to Git → selecionar o repo → sem build settings → Save and Deploy. Peça a URL gerada (ex: `https://projeto.pages.dev`). Com a URL em mãos, atualize `ALLOWED_ORIGIN` em `functions/api/meta.js`.
+
+**Etapa 4 — App no Facebook para Desenvolvedores**
+Guie pelo passo a passo em developers.facebook.com: criar app tipo "Outros" → "Empresa" → vincular Business Manager → vincular conta de anúncios.
+
+**Etapa 5 — Usuário do sistema e token**
+Guie em business.facebook.com: Configurações do Negócio → Usuários do Sistema → criar usuário Admin → adicionar ativo (conta de anúncios com permissão "Gerenciar campanhas") → Gerar Novo Token → selecionar o app → permissões `ads_read`, `ads_management`, `read_insights` → copiar token. Peça também o ID da conta de anúncios (só os números, sem `act_`).
+
+**Etapa 6 — Secrets na Cloudflare**
+Instrua a ir em Settings → Environment Variables do projeto Pages e adicionar:
+- `META_ACCESS_TOKEN` = o token copiado
+- `META_AD_ACCOUNT_ID` = o ID **sem** o prefixo `act_`
+Após salvar, instruir a fazer Retry deploy.
+
+**Etapa 7 — Logo do cliente**
+Pergunte se o cliente tem logo. Se sim, instrua a substituir `assets/logo.webp` por um arquivo 40×40px em formato `.webp`.
+
+**Etapa 8 — Commit e verificação**
+Faça commit e push de todas as alterações. Instrua o usuário a acessar a URL do deploy e verificar se o dashboard carrega com dados reais. Se aparecer erro, diagnostique com base nas mensagens.
+
+### Regras durante o onboarding
+
+- Nunca pule uma etapa sem confirmação do usuário
+- Se o usuário travar em alguma etapa, explique com mais detalhes e ofereça alternativas
+- Ao final, confirme que `NOME_DO_CLIENTE` não existe mais no código e que `ALLOWED_ORIGIN` foi atualizado
+- Sempre que fizer alterações no código, faça commit e push imediatamente
+
+---
+
+---
+
 ## Stack
 
 - **HTML único** (`index.html`) — sem build step, sem bundler
@@ -111,7 +166,7 @@ Ao criar um novo dashboard para um cliente, substituir:
 1. `NOME_DO_CLIENTE` no `index.html` → nome real do cliente
 2. `assets/logo.webp` → logo do cliente (recomendado: 40×40px, formato webp)
 3. `<title>` no `index.html` → nome do cliente
-4. `ALLOWED_ORIGIN` em `functions/api/meta.js` e `sheets.js` → domínio final do deploy
+4. `ALLOWED_ORIGIN` em `functions/api/meta.js` → domínio final do deploy
 5. `name` no `wrangler.toml` → slug do projeto (ex: `cliente-dashboard`)
 
 ---
