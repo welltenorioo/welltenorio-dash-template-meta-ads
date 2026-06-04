@@ -101,9 +101,6 @@ Cores para variações: verde `#10b981`, vermelho `#ef4444`, cinza `#64748b`.
 |----------|-----------|
 | `META_ACCESS_TOKEN` | Token de acesso longo da Meta Ads API |
 | `META_AD_ACCOUNT_ID` | ID da conta sem prefixo `act_` |
-| `SHEETS_SERVICE_ACCOUNT_EMAIL` | Email da service account do Google (opcional) |
-| `SHEETS_PRIVATE_KEY` | Chave privada da service account (opcional) |
-| `SHEETS_SPREADSHEET_ID` | ID da planilha Google Sheets (opcional) |
 
 ---
 
@@ -127,8 +124,7 @@ Ao criar um novo dashboard para um cliente, substituir:
 │   └── logo.webp           # Logo do cliente (substituir)
 ├── functions/
 │   └── api/
-│       ├── meta.js         # Proxy Meta Ads API
-│       └── sheets.js       # Proxy Google Sheets (opcional)
+│       └── meta.js         # Proxy Meta Ads API
 ├── wrangler.toml           # Config Cloudflare (dev local)
 ├── _redirects              # Redirects Cloudflare Pages
 └── CLAUDE.md               # Este arquivo
