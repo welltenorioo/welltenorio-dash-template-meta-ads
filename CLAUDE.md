@@ -55,8 +55,7 @@ Faça commit e push de todas as alterações. Instrua o usuário a acessar a URL
 - Se o usuário travar em alguma etapa, explique com mais detalhes e ofereça alternativas
 - Ao final, confirme que `NOME_DO_CLIENTE` não existe mais no código e que `ALLOWED_ORIGIN` foi atualizado
 - Sempre que fizer alterações no código, faça commit e push imediatamente
-
----
+- O `<title>` no `index.html` está como `"Meta Ads Dashboard"` — ele não contém `NOME_DO_CLIENTE`, então precisa ser atualizado separadamente para o nome do cliente
 
 ---
 

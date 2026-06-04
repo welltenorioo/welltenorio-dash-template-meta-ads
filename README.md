@@ -15,6 +15,13 @@ Dashboard profissional para Meta Ads hospedado no Cloudflare Pages. Sem código,
 A forma mais fácil é abrir este repositório no **Claude Code** e deixar o assistente te guiar por cada etapa.
 Ao abrir o projeto, o Claude vai detectar que o setup ainda não foi feito e vai iniciar o processo automaticamente.
 
+**Para abrir no Claude Code:**
+1. Baixe o Claude Code em [claude.ai/code](https://claude.ai/code) (disponível para Mac e Windows)
+2. Instale e faça login com sua conta Anthropic
+3. Clone o repositório no seu computador (`git clone URL_DO_SEU_REPO`)
+4. No Claude Code, abra a pasta do projeto clonado
+5. O Claude vai se apresentar e iniciar o setup automaticamente
+
 Se preferir fazer manual, siga o passo a passo abaixo.
 
 ---
@@ -120,8 +127,8 @@ Se preferir fazer manual, siga o passo a passo abaixo.
 Abra o repositório no Claude Code e peça para ele personalizar. Ou faça manualmente:
 
 **No arquivo `index.html`:**
-- Substitua todas as ocorrências de `NOME_DO_CLIENTE` pelo nome real do cliente
-- Atualize o `<title>` no `<head>`
+- Substitua todas as ocorrências de `NOME_DO_CLIENTE` pelo nome real do cliente (aparecem 3 vezes)
+- Atualize o `<title>` no `<head>` — ele está como `Meta Ads Dashboard`, troque pelo nome do cliente
 
 **No arquivo `functions/api/meta.js`:**
 - Substitua `const ALLOWED_ORIGIN = "*"` pela URL do seu deploy:
